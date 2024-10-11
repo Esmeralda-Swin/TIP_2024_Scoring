@@ -11,7 +11,8 @@ from manual import manual_layout, manual_callbacks
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True  # Suppress callback exceptions if components are conditionally loaded
 
-# Load the dataset in the AlgoDash.py file
+
+# Load the dataset
 excel = 'RawDataset.xlsx'
 data_sheet = 'dataset2'
 df = pd.read_excel(excel, sheet_name=data_sheet)
@@ -48,7 +49,7 @@ def render_content(tab):
 auto_callbacks(app)
 
 # Register the callbacks from the manual module
-manual_callbacks(app, df)
+manual_callbacks(app)
 
 # Run the app
 if __name__ == '__main__':
