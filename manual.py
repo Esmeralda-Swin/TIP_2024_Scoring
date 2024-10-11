@@ -29,6 +29,7 @@ df_avg_scores['Threat_Actor_Score_Percentage'] = (
     (df_avg_scores['Threat_Actor_Score'].max() - df_avg_scores['Threat_Actor_Score'].min() + 1)
 ) * 100
 
+
 # Initialize the layout for the manual tab
 def manual_layout(df):
     return dcc.Tab(label='Manual', children=[
@@ -55,7 +56,7 @@ def manual_layout(df):
 
             html.Label("Enter New APT Name:"),
             dcc.Input(
-                id='new-apt-input',
+                id='new-apt',
                 type='text',
                 placeholder='Enter new APT name',
                 disabled=True  # Initially disabled
@@ -64,7 +65,7 @@ def manual_layout(df):
 
             html.Label("No of Technique(s):"),
             dcc.Input(
-                id='technique-input',
+                id='new-tech',
                 type='number',
                 placeholder='Enter a number',
                 min=0,
@@ -75,16 +76,18 @@ def manual_layout(df):
             html.Label("Select Tactic:"),
             dcc.Dropdown(
                 id='tactic-dropdown',
-                options=[{'label': tactic, 'value': tactic} for tactic in df['tactic-description'].unique()],
+                options=[
+                    {'label': f"{tactic_id} - {tactic_description}", 'value': tactic_id}
+                    for tactic_id, tactic_description in pd.DataFrame(
+                        {'tactic-ID': df['tactic-ID'], 'tactic-description': df['tactic-description']}
+                    ).drop_duplicates().values
+                ],
                 placeholder="Select Tactic"
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Div([html.Label("Tactic ID:"), html.Div(id='tactic-id', style={'margin-bottom': '10px'})]),
-            html.Div(style={'height': '10px'}),  # Spacing
-
-            html.Div([html.Label("Tactic Score:"), html.Div(id='tactic-score', style={'margin-bottom': '10px'})]),
-            html.Div(style={'height': '10px'}),  # Spacing
+           html.Div([html.Div(id='tactic-score', style={'margin-bottom': '10px'})]),
+            #html.Div(style={'height': '10px'}),  # Spacing
 
             html.Label("Select Country of Origin:"),
             dcc.Dropdown(
@@ -97,7 +100,7 @@ def manual_layout(df):
 
             # Custom country input field
             dcc.Input(
-                id='custom-country-input',
+                id='custom',
                 type='text',
                 placeholder='Enter custom country name',
                 style={'display': 'none'}
@@ -106,7 +109,7 @@ def manual_layout(df):
 
             # Region weight input field
             dcc.Input(
-                id='region-weight-input',
+                id='new-region-weight',
                 type='number',
                 placeholder='Enter region weight score',
                 min=0,
@@ -115,12 +118,13 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Div([html.Label("Region Weight Score:"), html.Div(id='region-weight', style={'margin-bottom': '10px'})]),
+            html.Div(
+                [html.Label("Region Weight Score:"), html.Div(id='new-region-weight', style={'margin-bottom': '10px'})]),
             html.Div(style={'height': '10px'}),  # Spacing
 
             html.Label("CVSS Score: "),
             dcc.Input(
-                id='cvss-score-input',
+                id='new-cvss',
                 type='number',
                 placeholder='Enter CVSS score; between 0 - 10 ',
                 min=0,
@@ -131,7 +135,7 @@ def manual_layout(df):
 
             html.Label("CVE Count:"),
             dcc.Input(
-                id='cve-count-input',
+                id='new-cve-count',
                 type='number',
                 placeholder='Enter CVE count; min 1',
                 min=1,
@@ -141,7 +145,7 @@ def manual_layout(df):
 
             html.Label("Time (No. of Years):"),
             dcc.Input(
-                id='time-input',
+                id='new-time',
                 type='number',
                 placeholder='Enter no. of years',
                 min=0,
@@ -156,8 +160,11 @@ def manual_layout(df):
         ])
     ])
 
+
 # Register callbacks for the manual tab
 def manual_callbacks(app, df):
+
+    # callback for APT
     @app.callback(
         Output('new-apt-input', 'disabled'),
         Input('apt-selection', 'value')
@@ -166,11 +173,26 @@ def manual_callbacks(app, df):
         return selection != 'new'
 
     @app.callback(
-        Output('custom-country-input', 'style'),
-        Output('region-weight-input', 'style'),
+        Output('tactic-score', 'children'),
+        [Input('tactic-dropdown', 'value')]
+    )
+    # callback to dynamically show tactic score
+    def update_tactic_score(selected_tactic_id):
+        if selected_tactic_id is not None:
+            # Filter the DataFrame to get the score of the selected tactic
+            tactic_row = df[df['tactic-ID'] == selected_tactic_id]
+            if not tactic_row.empty:
+                # Assuming there's a 'tactic-score' column in the dataset
+                score = tactic_row.iloc[0]['tactic-score']
+                return f"Tactic Score: {score}"
+        return "No tactic selected"
+
+    @app.callback(
+        Output('custom', 'style'),
+        Output('new-region-weight', 'style'),
         Input('region-dropdown', 'value')
     )
-    def toggle_custom_country_input(region):
+    def toggle_custom_country(region):
         if region == 'Other':
             return {'display': 'block'}, {'display': 'block'}
         return {'display': 'none'}, {'display': 'none'}
@@ -180,20 +202,22 @@ def manual_callbacks(app, df):
         [Input('manual-submit-button', 'n_clicks')],
         [State('apt-selection', 'value'),
          State('apt-dropdown', 'value'),
-         State('new-apt-input', 'value'),
-         State('technique-input', 'value'),
+         State('new-apt', 'value'),
+         State('new-tech', 'value'),
          State('tactic-dropdown', 'value'),
          State('region-dropdown', 'value'),
-         State('custom-country-input', 'value'),
-         State('cvss-score-input', 'value'),
-         State('cve-count-input', 'value'),
-         State('time-input', 'value')]
+         State('custom', 'value'),
+         State('new-cvss', 'value'),
+         State('new-cve-count', 'value'),
+         State('new-time', 'value')]
     )
-    def analyze_apt(n_clicks, apt_selection, existing_apt, new_apt, technique_count, tactic, region, custom_country, cvss_score, cve_count, time):
+    def analyze_apt(n_clicks, apt_selection, existing_apt, new_apt, technique_count, tactic, region, custom_country,
+                    cvss_score, cve_count, time):
         if n_clicks > 0:
             # Implement your analysis logic here
             return "Analysis complete!"  # Placeholder for output
         raise PreventUpdate
+
 
 # Initialize the app and add the layout and callbacks
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
