@@ -66,8 +66,8 @@ auto_layout = html.Div([
         options=[{'label': apt, 'value': apt} for apt in df['apt'].unique()],
         placeholder="Select APT"
     ),
-    html.Button('Submit', id='auto-submit-button', n_clicks=0),
-    html.Div(id='auto-output-container', style={'margin-top': '20px'})
+    html.Button('Submit', id='auto-submit-button', n_clicks=0, style={'margin-top': '20px'}),
+    html.Div(id='auto-output-container',)
 ])
 
 # Callback for auto submit button

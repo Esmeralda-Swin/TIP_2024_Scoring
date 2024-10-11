@@ -48,7 +48,7 @@ def render_content(tab):
 auto_callbacks(app)
 
 # Register the callbacks from the manual module
-manual_callbacks(app, df)
+manual_callbacks(app)
 
 # Run the app
 if __name__ == '__main__':
