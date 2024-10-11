@@ -2,7 +2,7 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
-# Import tab contents
+# Import autonomous.py and manual.py
 from autonomous import autonomous_tab_layout, autonomous_callbacks
 from manual import manual_tab_layout, manual_callbacks
 
