@@ -102,14 +102,17 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("New Threat Actor:"),
+            # New APT input field label and input (hidden by default)
+            html.Div(id='new-apt-label', children='New Threat Actor:', style={'display': 'none'}),
             dcc.Input(
                 id='new-apt',
-                type='text',
-                placeholder='Enter a threat actor',
-                disabled=True  # Initially disabled
+                placeholder='Enter new APT...',
+                style={'display': 'none'}
             ),
             html.Div(style={'height': '10px'}),  # Spacing
+
+            html.Label(""),
+            html.Div(id='manual-output-techniques', style={'margin-bottom': '10px'}),
 
             html.Label("No of Technique(s):"),
             dcc.Input(
@@ -121,7 +124,7 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("Select a Tactic:"),
+            html.Label(""),
             dcc.Dropdown(
                 id='tactic-dropdown',
                 options=[{'label': f"{tactic_id} - {tactic_description}", 'value': tactic_id}
@@ -130,10 +133,12 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
+
+
             # Display tactic weight dynamically
             html.Div(id='tactic-score', style={'margin-bottom': '10px'}),
 
-            html.Label("Select Origin Region:"),
+            html.Label("Select an Origin Region: "),
             dcc.Dropdown(
                 id='region-dropdown',
                 options=[{'label': country, 'value': country} for country in countries],
@@ -155,22 +160,22 @@ def manual_layout(df):
                 min=0,
                 max=10,
                 step=1,
-                disabled=True  # Initially disabled
+                style={'display': 'none'}
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("CVSS Score: "),
+            html.Label("CVSS Score (0 - 10)"),
             dcc.Input(
                 id='new-cvss',
                 type='number',
-                placeholder='Enter CVSS score; between 0 - 10 ',
+                placeholder='Enter score',
                 min=0,
                 max=10,
                 step=0.1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("CVE Count:"),
+            html.Label("CVE Count (min=1) :"),
             dcc.Input(
                 id='new-cve-count',
                 type='number',
@@ -200,32 +205,52 @@ def manual_layout(df):
 
 # Register callbacks for the manual tab
 def manual_callbacks(app):
-    # Callback for APT selection
+    #callback for apt
     @app.callback(
-        [Output('apt-dropdown', 'disabled'),
-         Output('new-apt', 'disabled')],
+        [Output('apt-dropdown', 'style'),
+         Output('new-apt-label', 'style'),
+         Output('new-apt', 'style')],
         Input('apt-selection', 'value')
     )
     def update_apt_inputs(selection):
         if selection == 'existing':
-            return False, True  # Enable dropdown, disable new APT input
+            # Show the dropdown and hide the new APT input field
+            return  {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
         else:
-            return True, False  # Disable dropdown, enable new APT input
+            # Hide the dropdown and show the new APT input field and label
+            return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}
+
+    # Callback to dynamically display the number of techniques for a selected threat actor
+    @app.callback(
+        Output('manual-output-techniques', 'children'),
+        Input('apt-dropdown', 'value')
+    )
+    def update_technique_count(selected_apt):
+        if selected_apt:
+            # Fetch the number of techniques associated with the selected threat actor
+            techniques_count = df_final.loc[df_final['apt'] == selected_apt, 'technique-id'].nunique()
+            return f"Existing technique count for selected Threat Actor: {techniques_count}"
+        return ""
 
     # Callback to display the region weight score and enable new region weight input
     @app.callback(
         [Output('region-weight-display', 'children'),
-         Output('new-region-weight', 'disabled')],
+         Output('new-region-weight', 'style')],
         Input('region-dropdown', 'value')
     )
     def display_region_weight(selected_region):
         if selected_region:
             region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight']
             if not region_weight.empty:
-                return f"Region Weight: {region_weight.iloc[0]}", True  # Disable new input
+                # Return the region weight and hide the new region weight input
+                return f"Region Weight: {region_weight.iloc[0]}", {'display': 'none'}
             else:
-                return "No region weight available, please enter a region weight.", False  # Enable new input
-        return "Select a region.", True  # No selection made; keep new input disabled
+                # No region weight available, show the input for the user to enter a new region weight
+                return "No region weight available, please enter a region weight.", {'display': 'block'}
+        # If no region is selected, hide the new region weight input
+        return "",{'display': 'none'}
+
+
 
     # Callback to display the tactic score based on selection
     @app.callback(
@@ -237,7 +262,7 @@ def manual_callbacks(app):
             # Replace with your logic to get the tactic score
             tactic_score = df_final.loc[df_final['tactic-ID'] == selected_tactic, 'tactic-score']
             return f"Tactic Weight: {tactic_score.mean():.2f}" if not tactic_score.empty else "Tactic Weight not available."
-        return "Select a tactic."
+
 
     # Combined callback for APT name validation and analysis
     @app.callback(
@@ -282,6 +307,7 @@ def manual_callbacks(app):
             # Concatenate the new row to df_final
             global df_final  # Declare df_final as global to modify it
             df_final = pd.concat([df_final, new_row_df], ignore_index=True)  # Append the new row
+
 
             return f"Analysis complete for {apt_name if apt_selection == 'new' else existing_apt}."
 
