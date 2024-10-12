@@ -76,7 +76,7 @@ df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Sco
 def manual_layout(df):
     # Sort the tactic dropdown by tactic-description in alphabetical order
     tactic_options = pd.DataFrame(
-        {'tactic-ID': df['tactic-ID'], 'tactic-description': df['tactic-description']}
+        {'tactic-id': df['tactic-id'], 'tactic-description': df['tactic-description']}
     ).drop_duplicates().sort_values(by='tactic-description').values
 
     return dcc.Tab(label='Manual', children=[
@@ -260,7 +260,7 @@ def manual_callbacks(app):
     def update_tactic_score(selected_tactic):
         if selected_tactic:
             # Replace with your logic to get the tactic score
-            tactic_score = df_final.loc[df_final['tactic-ID'] == selected_tactic, 'tactic-score']
+            tactic_score = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-score']
             return f"Tactic Weight: {tactic_score.mean():.2f}" if not tactic_score.empty else "Tactic Weight not available."
 
 
@@ -293,7 +293,7 @@ def manual_callbacks(app):
             new_row = {
                 'apt': apt_name if apt_selection == 'new' else existing_apt,
                 'technique-id': technique_count,
-                'tactic-ID': tactic,
+                'tactic-id': tactic,
                 'region-weight': new_region_weight if new_region_weight is not None else region_weight,
                 # Use new region weight
                 'cvss-base-score': cvss_score,

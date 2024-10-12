@@ -76,7 +76,7 @@ print(df_avg_scores[['apt', 'Complexity', 'Prevalence', 'Threat_Actor_Score_Perc
 
 # Auto tab layout
 auto_layout = html.Div([
-    html.H3("Auto APT Selection"),
+    html.H3("Select a Threat Actor"),
     dcc.Dropdown(
         id='auto-apt-dropdown',
         options=[{'label': apt, 'value': apt} for apt in df['apt'].unique()],
@@ -109,7 +109,7 @@ def auto_callbacks(app):
             threat_actor_category = filtered_results['Threat_Actor_Category'].values[0]
 
             return html.Div([
-                html.Div(f"You have selected the APT: {selected_apt}."),
+                html.Div(f"You have selected: {selected_apt}."),
                 html.Div(f"Complexity: {complexity}"),
                 html.Div(f"Prevalence: {prevalence}"),
                 html.Div(f"", style={'margin-bottom': '10px'}),
