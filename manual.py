@@ -19,8 +19,8 @@ countries = ['China' if country == "People's Republic of China" else country for
 countries = sorted(countries)
 
 # Load the dataset
-excel = 'RawDataset.xlsx'
-data_sheet = 'dataset2'
+excel = 'VisualAmended_v9.xlsx'
+data_sheet = 'CleanedDataset'
 df = pd.read_excel(excel, sheet_name=data_sheet)
 
 # Calculate the number of techniques used by each APT
@@ -31,18 +31,16 @@ df_techniques.columns = ['apt', 'Number_of_Techniques_Used']
 df_final = pd.merge(df_techniques, df, on='apt')
 
 # Calculate Complexity
-df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-score']
-
+df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
 
 # Integrate Time
 def integrate_time(t):
     return (t ** 2 - 1) / 2
 
-
 # Calculate Prevalence using integration of time
 df_final['Prevalence'] = (
-        df_final['region-weight'] + df_final['cve-count'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
-        df_final['Time'].apply(integrate_time)
+        df_final['region-weight'] + df_final['impact-score'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
+        df_final['time'].apply(integrate_time)
 )
 
 # Calculate the Final Threat Actor Score
@@ -71,10 +69,22 @@ df_avg_scores['Threat_Actor_Score_Percentage'] = ((df_avg_scores['Threat_Actor_S
 df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
     2)  # Round to 2 decimals
 
+# Define a function to categorize the Threat Actor Score Percentage
+def categorize_score(score):
+    if 0<=score<= 19.99:
+        return 'Very Low'
+    elif 20<=score<= 39.99:
+        return 'Low'
+    elif 40<=score<= 59.99:
+        return 'Moderate'
+    elif 60<=score<= 79.99:
+        return 'Critical'
+    else:
+        return 'Highly Critical'
 
 # Initialize the layout for the manual tab
 def manual_layout(df):
-    # Sort the tactic dropdown by tactic-description in alphabetical order
+    # Sort the tactic dropdown by tactics in alphabetical order
     tactic_options = pd.DataFrame(
         {'tactic-id': df['tactic-id'], 'tactics': df['tactics']}
     ).drop_duplicates().sort_values(by='tactics').values
@@ -133,10 +143,9 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-
-
             # Display tactic weight dynamically
-            html.Div(id='tactic-score', style={'margin-bottom': '10px'}),
+            html.Label("Tactic Weight:  "),
+            html.Div(id='tactic-weight-display', style={'margin-bottom': '10px'}),
 
             html.Label("Select an Origin Region: "),
             dcc.Dropdown(
@@ -175,12 +184,34 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
+            html.Label("Platform count (0 - 10): "),
+            dcc.Input(
+                id='new-platform',
+                type='number',
+                placeholder='Enter count',
+                min=0,
+                max=10,
+                step=1
+            ),
+            html.Div(style={'height': '10px'}),  # Spacing
+
             html.Label("CVE Count (min=1) :"),
             dcc.Input(
-                id='new-cve-count',
+                id='new-impact-score',
                 type='number',
                 placeholder='Enter CVE count; min 1',
                 min=1,
+                step=1
+            ),
+            html.Div(style={'height': '10px'}),  # Spacing
+
+            html.Label("IoC Weight (min=1) :"),
+            dcc.Input(
+                id='new-ioc-weight',
+                type='number',
+                placeholder='Enter IoC weight (0 - 10) : ',
+                min=1,
+                max=10,
                 step=1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
@@ -205,7 +236,7 @@ def manual_layout(df):
 
 # Register callbacks for the manual tab
 def manual_callbacks(app):
-    #callback for apt
+    # Callback for apt
     @app.callback(
         [Output('apt-dropdown', 'style'),
          Output('new-apt-label', 'style'),
@@ -242,75 +273,85 @@ def manual_callbacks(app):
         if selected_region:
             region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight']
             if not region_weight.empty:
-                # Return the region weight and hide the new region weight input
-                return f"Region Weight: {region_weight.iloc[0]}", {'display': 'none'}
+                # Return the region weight as an integer and hide the new region weight input
+                return f"Region Weight: {int(region_weight.iloc[0])}", {'display': 'none'}  # Convert to integer
             else:
                 # No region weight available, show the input for the user to enter a new region weight
                 return "No region weight available, please enter a region weight.", {'display': 'block'}
         # If no region is selected, hide the new region weight input
-        return "",{'display': 'none'}
-
-
+        return "", {'display': 'none'}
 
     # Callback to display the tactic score based on selection
     @app.callback(
-        Output('tactic-score', 'children'),
+        Output('tactic-weight-display', 'children'),
         Input('tactic-dropdown', 'value')
     )
     def update_tactic_score(selected_tactic):
         if selected_tactic:
-            # Replace with your logic to get the tactic score
-            tactic_score = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-score']
-            return f"Tactic Weight: {tactic_score.mean():.2f}" if not tactic_score.empty else "Tactic Weight not available."
+            tactic_weight = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-weight']
 
+            # Return the tactic weight directly as an integer, if available
+            if not tactic_weight.empty:
+                return int(tactic_weight.values[0])  # Return integer value directly
+            else:
+                return "Tactic Weight not available."
+        return ""
 
-    # Combined callback for APT name validation and analysis
+    # Callback to analyze and display results
     @app.callback(
         Output('manual-output-container', 'children'),
         Input('manual-submit-button', 'n_clicks'),
-        Input('new-apt', 'value'),
         State('apt-selection', 'value'),
         State('apt-dropdown', 'value'),
+        State('new-apt', 'value'),
         State('new-tech', 'value'),
-        State('tactic-dropdown', 'value'),
-        State('region-dropdown', 'value'),
-        State('new-region-weight', 'value'),  # Get new region weight value
+        State('tactic-dropdown', 'value'),  # Selected tactic
+        State('tactic-weight-display', 'children'),  # Capture tactic weight display
+        State('region-dropdown', 'value'),  # Selected region
+        State('region-weight-display', 'children'),  # Capture region weight display
+        State('new-region-weight', 'value'),  # Capture new region weight input
         State('new-cvss', 'value'),
-        State('new-cve-count', 'value'),
+        State('new-platform', 'value'),
+        State('new-impact-score', 'value'),
+        State('new-ioc-weight', 'value'),
         State('new-time', 'value')
     )
-    def handle_apt_analysis(n_clicks, apt_name, apt_selection, existing_apt, technique_count,
-                            tactic, region_weight, new_region_weight, cvss_score, cve_count, time):
+    def analyze(n_clicks, apt_selection, apt, new_apt, new_tech, selected_tactic, tactic_weight_display, region,
+                region_weight_display, new_region_weight, cvss, platform,
+                impact_score, ioc_weight, time):
         if n_clicks > 0:
-            # Validate APT name if adding new
-            if apt_selection == 'new':
-                if not apt_name or apt_name.strip() == '':
-                    return "Please provide a valid Threat Actor name."
-                if re.search(r'\s', apt_name.strip()):  # Check for spaces
-                    return "Please provide a name without spaces."
+            # Create the output string with descriptions
+            output = []
+            if apt_selection == 'existing':
+                output.append(f"Selected Threat Actor: {apt}")
+            else:
+                output.append(f"New Threat Actor: {new_apt}")
 
-            # Create the new data entry
-            new_row = {
-                'apt': apt_name if apt_selection == 'new' else existing_apt,
-                'technique-id': technique_count,
-                'tactic-id': tactic,
-                'region-weight': new_region_weight if new_region_weight is not None else region_weight,
-                # Use new region weight
-                'cvss-base-score': cvss_score,
-                'cve-count': cve_count,
-                'Time': time
-            }
+            output.append(f"Number of Techniques: {new_tech}")
 
-            # Convert the new row to a DataFrame
-            new_row_df = pd.DataFrame([new_row])  # Create a DataFrame for the new row
+            # Use the tactic weight that has already been calculated
+            if tactic_weight_display:
+                output.append(f"Selected Tactic Weight: {tactic_weight_display}")
+            else:
+                output.append("Weight not available")
 
-            # Concatenate the new row to df_final
-            global df_final  # Declare df_final as global to modify it
-            df_final = pd.concat([df_final, new_row_df], ignore_index=True)  # Append the new row
+            output.append(f"Selected Origin Region: {region}")
 
+            # Check for existing region weight
+            if "No region weight available" not in region_weight_display:
+                # Extracting integer value from the display text
+                region_weight = region_weight_display.split(': ')[
+                    1]  # This will give you the string representation of the weight
+                output.append(f"Region Weight: {region_weight}")  # Append existing region weight
+            else:
+                output.append(f"Region Weight: {new_region_weight}")  # Use the new input if available
 
-            return f"Analysis complete for {apt_name if apt_selection == 'new' else existing_apt}."
+            output.append(f"CVSS Score: {cvss}")
+            output.append(f"Platform Count: {platform}")
+            output.append(f"Impact Score (CVE Count): {impact_score}")
+            output.append(f"IoC Weight: {ioc_weight}")
+            output.append(f"Time (No. of Years): {time}")
 
-        raise PreventUpdate  # Prevent updates if no button clicks
+            return html.Div([html.P(desc) for desc in output])
 
-
+        raise PreventUpdate
