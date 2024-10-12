@@ -2,7 +2,7 @@ import plotly.express as px
 import pandas as pd
 
 # Function to create the bar chart for CVE vs CWE
-def create_bar_chart(cwe_cve_count):
+def create_cve_cwe_bar_chart(cwe_cve_count):
     bar_cve_cwe = px.bar(
         cwe_cve_count,
         x='cwe-id',

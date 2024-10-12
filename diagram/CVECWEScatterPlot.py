@@ -5,7 +5,7 @@ import pandas as pd
 # df_scatter = pd.read_csv('your_dataset.csv')
 
 # Function to create the scatter plot
-def create_scatter_plot(df_scatter, selected_cwe=None, selected_cvss=None):
+def create_cve_cwe_scatter_plot(df_scatter, selected_cwe=None, selected_cvss=None):
     # Filter data for scatter plot
     df_scatter_filtered = df_scatter.copy()
     if selected_cwe:
@@ -17,7 +17,7 @@ def create_scatter_plot(df_scatter, selected_cwe=None, selected_cvss=None):
     scatter_plot = px.scatter(df_scatter_filtered, x='cwe_num', y='cvss-base-score',
                               hover_data=['cve', 'cwe-id'],
                               title='Scatter Plot of CVEs and Their Associated CWEs',
-                              labels={'cwe_num': 'CWE (as Numeric Value)', 'cvss-base-score': 'CVSS Score (V3)'},
+                              labels={'cwe_num': 'CWE (as Numeric Value)', 'cvss-base-score': 'CVSS Score'},
                               color='cvss-base-score',
                               color_continuous_scale='Blues')
     return scatter_plot

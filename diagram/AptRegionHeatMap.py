@@ -3,7 +3,7 @@ import geopandas as gpd
 import folium
 from branca.colormap import linear
 
-def create_region_map(df, shapefile_path='CountryMap/ne_10m_admin_0_countries.shp'):
+def create_region_map(df, shapefile_path='ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'):
     # Group data by region (country) to get the frequency of regions or apartments
     region_frequency = df.groupby('region').size().reset_index(name='region_count')
 
