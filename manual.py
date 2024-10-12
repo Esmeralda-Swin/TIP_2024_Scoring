@@ -76,8 +76,8 @@ df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Sco
 def manual_layout(df):
     # Sort the tactic dropdown by tactic-description in alphabetical order
     tactic_options = pd.DataFrame(
-        {'tactic-id': df['tactic-id'], 'tactic-description': df['tactic-description']}
-    ).drop_duplicates().sort_values(by='tactic-description').values
+        {'tactic-id': df['tactic-id'], 'tactics': df['tactics']}
+    ).drop_duplicates().sort_values(by='tactics').values
 
     return dcc.Tab(label='Manual', children=[
         html.Div([
