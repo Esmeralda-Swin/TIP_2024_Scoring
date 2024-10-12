@@ -13,8 +13,8 @@ app.config.suppress_callback_exceptions = True  # Suppress callback exceptions i
 
 
 # Load the dataset
-excel = 'RawDataset.xlsx'
-data_sheet = 'dataset2'
+excel = 'VisualAmended_v9.xlsx'
+data_sheet = 'CleanedDataset'
 df = pd.read_excel(excel, sheet_name=data_sheet)
 
 # Define the layout of the dashboard

@@ -1,11 +1,12 @@
+from click import style
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import pandas as pd
 from dash.exceptions import PreventUpdate
 
 # Load the dataset
-excel = 'RawDataset.xlsx'
-data_sheet = 'dataset2'
+excel = 'VisualAmended_v9.xlsx'
+data_sheet = 'CleanedDataset'
 df = pd.read_excel(excel, sheet_name=data_sheet)
 
 # Calculate the number of techniques used by each APT
@@ -16,8 +17,7 @@ df_techniques.columns = ['apt', 'Number_of_Techniques_Used']
 df_final = pd.merge(df_techniques, df, on='apt')
 
 # Calculate Complexity
-df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-score']
-
+df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
 
 # Integrate Time
 def integrate_time(t): return (t ** 2 - 1) / 2
@@ -25,8 +25,8 @@ def integrate_time(t): return (t ** 2 - 1) / 2
 
 # Calculate Prevalence using integration of time
 df_final['Prevalence'] = (
-        df_final['region-weight'] + df_final['cve-count'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
-        df_final['Time'].apply(integrate_time)
+        df_final['region-weight'] + df_final['impact-score'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
+        df_final['time'].apply(integrate_time)
 )
 
 # Calculate the Final Threat Actor Score
@@ -55,8 +55,24 @@ df_avg_scores['Threat_Actor_Score_Percentage'] = ((df_avg_scores['Threat_Actor_S
 df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
     2)  # Round to 2 decimals
 
+# Define a function to categorize the Threat Actor Score Percentage
+def categorize_score(score):
+    if 0<=score<= 19.99:
+        return 'Very Low'
+    elif 20<=score<= 39.99:
+        return 'Low'
+    elif 40<=score<= 59.99:
+        return 'Moderate'
+    elif 60<=score<= 79.99:
+        return 'Critical'
+    else:
+        return 'Highly Critical'
+
+# Apply the categorization function to the Threat Actor Score Percentage column
+df_avg_scores['Threat_Actor_Category'] = df_avg_scores['Threat_Actor_Score_Percentage'].apply(categorize_score)
+
 # Display the final results with only one entry per APT
-print(df_avg_scores[['apt', 'Complexity', 'Prevalence', 'Threat_Actor_Score_Percentage']])
+print(df_avg_scores[['apt', 'Complexity', 'Prevalence', 'Threat_Actor_Score_Percentage','Threat_Actor_Category']])
 
 # Auto tab layout
 auto_layout = html.Div([
@@ -90,12 +106,15 @@ def auto_callbacks(app):
             complexity = filtered_results['Complexity'].values[0]
             prevalence = filtered_results['Prevalence'].values[0]
             threat_actor_score_percentage = filtered_results['Threat_Actor_Score_Percentage'].values[0]
+            threat_actor_category = filtered_results['Threat_Actor_Category'].values[0]
 
             return html.Div([
                 html.Div(f"You have selected the APT: {selected_apt}."),
                 html.Div(f"Complexity: {complexity}"),
                 html.Div(f"Prevalence: {prevalence}"),
-                html.Div(f"Threat Actor Score Percentage: {threat_actor_score_percentage}%")
+                html.Div(f"", style={'margin-bottom': '10px'}),
+                html.Div(f"Threat Actor Score Percentage: {threat_actor_score_percentage}%"),
+                html.Div(f"Threat Actor Category: {threat_actor_category}"),
             ])
         raise PreventUpdate
 
