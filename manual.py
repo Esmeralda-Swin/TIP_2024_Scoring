@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 app = Dash(__name__)
 
 # Load country names from GeoDataFrame
-geojson_path = r'C:\Users\disha\Tech innovation Project\TechProject\TIP_2024_Scoring\ne_10m_admin_0_countries'  # Update this path
+geojson_path = r'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'  # Update this path
 world = gpd.read_file(geojson_path)
 
 # Extract the list of country names and sort in ascending order
@@ -173,13 +173,12 @@ def manual_layout(df):
             html.Div(id='weight-region', style={'display': 'none'}),  # Add the hidden Div
 
             # Input field for new region weight
-            html.Label(""),
+            html.Label("No existing region weight. Enter a region weight"),
             dcc.Input(
                 id='new-region-weight',
                 type='number',
                 placeholder='Enter region weight',
                 min=0,
-                max=31.77,
                 step=1,
                 style={'display': 'none'}
             ),
@@ -433,10 +432,7 @@ def manual_callbacks(app):
                           integrate_time(int(time)))
 
             # Calculate the Final Threat Actor Score
-            max_score = 272.85
-            actor_score = (complexity * prevalence)
-            score = (actor_score/max_score)
-
+            score = (complexity * prevalence) / 100
 
             # Define a function to categorize the Threat Actor Score Percentage
             def categorize_score(score):
@@ -457,8 +453,7 @@ def manual_callbacks(app):
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
             output_data.append(("Prevalence", prevalence))
-            # output_data.append(("Threat Actor Score", score))
-            output_data.append(("Threat Actor Score", f"{score:.2f}%"))
+            output_data.append(("Threat Actor Score", score))
             output_data.append(("Threat Actor Category", category))
 
             # Create table output
