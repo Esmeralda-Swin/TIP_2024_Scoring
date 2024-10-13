@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 app = Dash(__name__)
 
 # Load country names from GeoDataFrame
-geojson_path = r'C:\Users\esmer\ne_110m_admin_0_countries\ne_110m_admin_0_countries.shp'  # Update this path
+geojson_path = r'C:\Users\disha\Tech innovation Project\TechProject\TIP_2024_Scoring\ne_10m_admin_0_countries'  # Update this path
 world = gpd.read_file(geojson_path)
 
 # Extract the list of country names and sort in ascending order
@@ -127,12 +127,13 @@ def manual_layout(df):
             html.Label(""),
             html.Div(id='manual-output-techniques', style={'margin-bottom': '10px'}),
 
-            html.Label("No of Technique(s):"),
+            html.Label("No of Technique(s) (max=201):"),
             dcc.Input(
                 id='new-tech',
                 type='number',
                 placeholder='Enter a number',
                 min=0,
+                max=201,
                 step=1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
@@ -166,7 +167,7 @@ def manual_layout(df):
             html.Div(id='weight-region', style={'display': 'none'}),  # Add the hidden Div
 
             # Input field for new region weight
-            html.Label("No existing region weight. Enter a region weight"),
+            html.Label("No existing region weight. Enter a region weight (max=32)"),
             dcc.Input(
                 id='new-region-weight',
                 type='number',
@@ -221,13 +222,14 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("Time (No. of Years):"),
+            html.Label("Time (No. of Years) (1-10):"),
             dcc.Input(
                 id='new-time',
                 type='number',
                 placeholder='Enter no. of years',
-                min=0,
-                step=0.1
+                min=1,
+                max=10,
+                step=1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
@@ -345,37 +347,37 @@ def manual_callbacks(app):
                 weight_region, new_region_weight, cvss, new_platform, impact_score, ioc_weight, time):
         if n_clicks > 0:
             # Check for required inputs
-            missing_fields = []
-
-            if not apt_selection:
-                missing_fields.append("APT Selection")
-            if apt_selection == 'existing' and not apt:
-                missing_fields.append("Threat Actor (APT)")
-            if apt_selection == 'new' and not new_apt:
-                missing_fields.append("New Threat Actor")
-            if not new_tech:
-                missing_fields.append("No. of Techniques")
-            if not tactic_weight_display:
-                missing_fields.append("Tactic Weight")
-            if not region:
-                missing_fields.append("Region")
-            if weight_region is None and not new_region_weight:
-                missing_fields.append("Region Weight (either from dataset or input)")
-            if not cvss:
-                missing_fields.append("CVSS Score")
-            if not new_platform:
-                missing_fields.append("Platform Count")
-            if not impact_score:
-                missing_fields.append("Impact Score")
-            if not ioc_weight:
-                missing_fields.append("IoC Weight")
-            if not time:
-                missing_fields.append("Time (Years)")
-
-            # If there are missing fields, return an error message
-            if missing_fields:
-                error_message = f"Please fill in the following required fields: {', '.join(missing_fields)}."
-                return html.Div(), error_message
+            # missing_fields = []
+            #
+            # if not apt_selection:
+            #     missing_fields.append("APT Selection")
+            # if apt_selection == 'existing' and not apt:
+            #     missing_fields.append("Threat Actor (APT)")
+            # if apt_selection == 'new' and not new_apt:
+            #     missing_fields.append("New Threat Actor")
+            # if not new_tech:
+            #     missing_fields.append("No. of Techniques")
+            # if not tactic_weight_display:
+            #     missing_fields.append("Tactic Weight")
+            # if not region:
+            #     missing_fields.append("Region")
+            # if weight_region is None and not new_region_weight:
+            #     missing_fields.append("Region Weight (either from dataset or input)")
+            # if not cvss:
+            #     missing_fields.append("CVSS Score")
+            # if not new_platform:
+            #     missing_fields.append("Platform Count")
+            # if not impact_score:
+            #     missing_fields.append("Impact Score")
+            # if not ioc_weight:
+            #     missing_fields.append("IoC Weight")
+            # if not time:
+            #     missing_fields.append("Time (Years)")
+            #
+            # # If there are missing fields, return an error message
+            # if missing_fields:
+            #     error_message = f"Please fill in the following required fields: {', '.join(missing_fields)}."
+            #     return html.Div(), error_message
 
             # Prepare output data
             output_data = []
@@ -418,8 +420,19 @@ def manual_callbacks(app):
                           int(ioc_weight) +
                           integrate_time(int(time)))
 
+
             # Calculate the Final Threat Actor Score
-            score = (complexity * prevalence) / 100
+            # score = ((complexity * prevalence) / 100)
+
+            # # Calculate Threat Actor Score as a percentage
+            # min_score = ((df_avg_scores['Threat_Actor_Score'] - min_score) / (
+            #         max_score - min_score)) * 100
+            # df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
+            #     2)  # Round to 2 decimals
+            # min_score=0
+            max_score=272.85
+            actor_score = (complexity * prevalence)
+            score= (actor_score/max_score)
 
             # Define a function to categorize the Threat Actor Score Percentage
             def categorize_score(score):
@@ -440,7 +453,8 @@ def manual_callbacks(app):
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
             output_data.append(("Prevalence", prevalence))
-            output_data.append(("Threat Actor Score", score))
+            # output_data.append(("Threat Actor Score", {score:.2f}%))
+            output_data.append(("Threat Actor Score", f"{score:.2f}%"))
             output_data.append(("Threat Actor Category", category))
 
             # Create table output
