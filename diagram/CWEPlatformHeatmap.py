@@ -1,25 +1,40 @@
 import plotly.graph_objects as go
 import pandas as pd
 
-# Function to create the heatmap
-def create_cwe_platform_heatmap(df_expanded, selected_platform=None, selected_cwe=None):
-    # Filter data for heatmap
-    df_filtered = df_expanded.copy()
-    if selected_platform:
-        df_filtered = df_filtered[df_filtered['platforms'].isin(selected_platform)]
-    if selected_cwe:
-        df_filtered = df_filtered[df_filtered['cwe-id'].isin(selected_cwe)]
+def create_cwe_platform_heatmap(df, selected_cwes=None, selected_platforms=None):
+    # Split platforms into separate rows
+    df_expanded = df.assign(platform=df['platforms'].str.split(',')).explode('platform')
 
-    # Create the pivot table for heatmap
-    pivot_table = df_filtered.pivot_table(index='platforms', columns='cwe-id', aggfunc='size', fill_value=0)
+    # Remove any leading/trailing whitespace from platform names
+    df_expanded['platform'] = df_expanded['platform'].str.strip()
+
+    # Filter out rows with 'UNKNOWN' in the 'CWE-ID' column
+    df_expanded = df_expanded[df_expanded['cwe-id'] != 'UNKNOWN']
+
+    # Apply CWE filtering if selected
+    if selected_cwes:
+        df_expanded = df_expanded[df_expanded['cwe-id'].isin(selected_cwes)]
+
+    # Apply platform filtering if selected
+    if selected_platforms:
+        df_expanded = df_expanded[df_expanded['platform'].isin(selected_platforms)]
+
+    # Create a pivot table to count occurrences of each CWE per platform
+    platform_cwe_pivot = df_expanded.pivot_table(index='platform', columns='cwe-id', aggfunc='size', fill_value=0)
 
     # Create the heatmap
     heatmap = go.Figure(go.Heatmap(
-        z=pivot_table.values,
-        x=pivot_table.columns,
-        y=pivot_table.index,
+        z=platform_cwe_pivot.values,
+        x=platform_cwe_pivot.columns,
+        y=platform_cwe_pivot.index,
         colorscale='sunset'
     ))
-    heatmap.update_layout(title='Heatmap of CWE Occurrences Across Platforms')
+
+    # Update the layout for titles and labels
+    heatmap.update_layout(
+        title='Heatmap of CWE Occurrences Across Platforms',
+        xaxis_title='CWE-ID',
+        yaxis_title='Platform'
+    )
 
     return heatmap
