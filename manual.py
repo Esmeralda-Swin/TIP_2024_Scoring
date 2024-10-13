@@ -173,7 +173,7 @@ def manual_layout(df):
             html.Div(id='weight-region', style={'display': 'none'}),  # Add the hidden Div
 
             # Input field for new region weight
-            html.Label("No existing region weight. Enter a region weight"),
+            html.Label(""),
             dcc.Input(
                 id='new-region-weight',
                 type='number',
