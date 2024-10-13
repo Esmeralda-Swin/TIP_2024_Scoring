@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 app = Dash(__name__)
 
 # Load country names from GeoDataFrame
-geojson_path = r'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'  # Update this path
+geojson_path = r'C:\Users\esmer\ne_110m_admin_0_countries\ne_110m_admin_0_countries.shp'  # Update this path
 world = gpd.read_file(geojson_path)
 
 # Extract the list of country names and sort in ascending order
@@ -16,11 +16,13 @@ countries = (world['NAME_EN'].unique())  # Get unique country names and sort the
 countries = [country.strip() for country in countries]  # Trim spaces from country names
 # Replace "People's Republic of China" with "China"
 countries = ['China' if country == "People's Republic of China" else country for country in countries]
+# Include "Unknown" in the country list
+countries.append("Unknown")
 countries = sorted(countries)
 
 # Load the dataset
-excel = 'RawDataset.xlsx'
-data_sheet = 'dataset2'
+excel = 'VisualAmended_v9.xlsx'
+data_sheet = 'CleanedDataset'
 df = pd.read_excel(excel, sheet_name=data_sheet)
 
 # Calculate the number of techniques used by each APT
@@ -30,58 +32,76 @@ df_techniques.columns = ['apt', 'Number_of_Techniques_Used']
 # Combine to the dataset
 df_final = pd.merge(df_techniques, df, on='apt')
 
-# Calculate Complexity
-df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-score']
-
-
-# Integrate Time
-def integrate_time(t):
-    return (t ** 2 - 1) / 2
-
-
-# Calculate Prevalence using integration of time
-df_final['Prevalence'] = (
-        df_final['region-weight'] + df_final['cve-count'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
-        df_final['Time'].apply(integrate_time)
-)
-
-# Calculate the Final Threat Actor Score
-df_final['Threat_Actor_Score'] = df_final['Complexity'] * df_final['Prevalence']
-
-# Calculate the average as there are 3 entries for each threat actor
-df_avg_scores = df_final.groupby('apt', as_index=False).agg({
-    'Number_of_Techniques_Used': 'mean',
-    'Complexity': 'mean',
-    'Prevalence': 'mean',
-    'Threat_Actor_Score': 'mean'
-})
-
-# Rounding the scores to 2 decimal points
-df_avg_scores['Complexity'] = df_avg_scores['Complexity'].round(2)
-df_avg_scores['Prevalence'] = df_avg_scores['Prevalence'].round(2)
-df_avg_scores['Threat_Actor_Score'] = df_avg_scores['Threat_Actor_Score'].round(2)
-
-# Calculate min and max scores to be used for the percentage calculation
-min_score = (df_avg_scores['Threat_Actor_Score'].min()) - 1
-max_score = (df_avg_scores['Threat_Actor_Score'].max()) + 1
-
-# Calculate Threat Actor Score as a percentage
-df_avg_scores['Threat_Actor_Score_Percentage'] = ((df_avg_scores['Threat_Actor_Score'] - min_score) / (
-        max_score - min_score)) * 100
-df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
-    2)  # Round to 2 decimals
-
+# # Calculate Complexity
+# df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
+#
+# # Integrate Time
+# def integrate_time(t):
+#     return (t ** 2 - 1) / 2
+#
+# # Calculate Prevalence using integration of time
+# df_final['Prevalence'] = (
+#         df_final['region-weight'] + df_final['impact-score'] + df_final['cvss-base-score'] + df_final['ioc-weight'] +
+#         df_final['time'].apply(integrate_time)
+# )
+#
+# # Calculate the Final Threat Actor Score
+# df_final['Threat_Actor_Score'] = df_final['Complexity'] * df_final['Prevalence']
+#
+# # Calculate the average as there are 3 entries for each threat actor
+# df_avg_scores = df_final.groupby('apt', as_index=False).agg({
+#     'Number_of_Techniques_Used': 'mean',
+#     'Complexity': 'mean',
+#     'Prevalence': 'mean',
+#     'Threat_Actor_Score': 'mean'
+# })
+#
+# # Rounding the scores to 2 decimal points
+# df_avg_scores['Complexity'] = df_avg_scores['Complexity'].round(2)
+# df_avg_scores['Prevalence'] = df_avg_scores['Prevalence'].round(2)
+# df_avg_scores['Threat_Actor_Score'] = df_avg_scores['Threat_Actor_Score'].round(2)
+#
+# # Calculate min and max scores to be used for the percentage calculation
+# min_score = (df_avg_scores['Threat_Actor_Score'].min()) - 1
+# max_score = (df_avg_scores['Threat_Actor_Score'].max()) + 1
+#
+# # Calculate Threat Actor Score as a percentage
+# df_avg_scores['Threat_Actor_Score_Percentage'] = ((df_avg_scores['Threat_Actor_Score'] - min_score) / (
+#         max_score - min_score)) * 100
+# df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
+#     2)  # Round to 2 decimals
+#
+# # Define a function to categorize the Threat Actor Score Percentage
+# def categorize_score(score):
+#     if 0<=score<= 19.99:
+#         return 'Very Low'
+#     elif 20<=score<= 39.99:
+#         return 'Low'
+#     elif 40<=score<= 59.99:
+#         return 'Moderate'
+#     elif 60<=score<= 79.99:
+#         return 'Critical'
+#     else:
+#         return 'Highly Critical'
 
 # Initialize the layout for the manual tab
 def manual_layout(df):
-    # Sort the tactic dropdown by tactic-description in alphabetical order
+    # Sort the tactic dropdown by tactics in alphabetical order and append "Unknown"
     tactic_options = pd.DataFrame(
-        {'tactic-ID': df['tactic-ID'], 'tactic-description': df['tactic-description']}
-    ).drop_duplicates().sort_values(by='tactic-description').values
+        {'tactic-id': df['tactic-id'], 'tactics': df['tactics']}
+    ).drop_duplicates().sort_values(by='tactics')
+
+    # Append the "Unknown" tactic
+    unknown_row = pd.DataFrame({'tactic-id': ['Unknown'], 'tactics': ['Unknown']})
+    tactic_options = pd.concat([tactic_options, unknown_row], ignore_index=True)
+
+    # Sort the DataFrame again to ensure "Unknown" is correctly placed
+    tactic_options = tactic_options.sort_values(by='tactics').values
 
     return dcc.Tab(label='Manual', children=[
         html.Div([
             html.H3("Configure Individual Algorithm Parameters"),
+            html.Div(id='error-message', style={'color': 'red', 'margin-bottom': '10px'}),
             html.Label("Select a Threat Actor:"),
             dcc.RadioItems(
                 id='apt-selection',
@@ -133,10 +153,9 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-
-
             # Display tactic weight dynamically
-            html.Div(id='tactic-score', style={'margin-bottom': '10px'}),
+            html.Label("Tactic Weight:  "),
+            html.Div(id='tactic-weight-display', style={'margin-bottom': '10px'}),
 
             html.Label("Select an Origin Region: "),
             dcc.Dropdown(
@@ -151,14 +170,15 @@ def manual_layout(df):
             html.Div(id='region-weight-display', style={'margin-bottom': '10px'}),
             html.Div(style={'height': '10px'}),  # Spacing
 
+            html.Div(id='weight-region', style={'display': 'none'}),  # Add the hidden Div
+
             # Input field for new region weight
-            html.Label("Enter New Region Weight (0 - 10) :"),
+            html.Label("No existing region weight. Enter a region weight"),
             dcc.Input(
                 id='new-region-weight',
                 type='number',
                 placeholder='Enter region weight',
                 min=0,
-                max=10,
                 step=1,
                 style={'display': 'none'}
             ),
@@ -175,13 +195,36 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label("CVE Count (min=1) :"),
+            html.Label("Platform count (0 - 10): "),
             dcc.Input(
-                id='new-cve-count',
+                id='new-platform',
+                type='number',
+                placeholder='Enter count',
+                min=0,
+                max=10,
+                step=1
+            ),
+            html.Div(style={'height': '10px'}),  # Spacing
+
+            html.Label("Impact Score (CVE) (0 - 10) :"),
+            dcc.Input(
+                id='new-impact-score',
                 type='number',
                 placeholder='Enter CVE count; min 1',
-                min=1,
-                step=1
+                min=0,
+                max=10,
+                step=0.1
+            ),
+            html.Div(style={'height': '10px'}),  # Spacing
+
+            html.Label("IoC Weight (0 - 10) :"),
+            dcc.Input(
+                id='new-ioc-weight',
+                type='number',
+                placeholder='Enter IoC weight (0 - 10) : ',
+                min=0,
+                max=10,
+                step=0.1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
@@ -191,7 +234,7 @@ def manual_layout(df):
                 type='number',
                 placeholder='Enter no. of years',
                 min=0,
-                step=1
+                step=0.1
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
@@ -205,7 +248,7 @@ def manual_layout(df):
 
 # Register callbacks for the manual tab
 def manual_callbacks(app):
-    #callback for apt
+    # Callback for apt
     @app.callback(
         [Output('apt-dropdown', 'style'),
          Output('new-apt-label', 'style'),
@@ -235,82 +278,189 @@ def manual_callbacks(app):
     # Callback to display the region weight score and enable new region weight input
     @app.callback(
         [Output('region-weight-display', 'children'),
-         Output('new-region-weight', 'style')],
-        Input('region-dropdown', 'value')
+         Output('new-region-weight', 'style'),
+         Output('weight-region', 'data')],  # Store the region weight in a dcc.Store component
+        Input('region-dropdown', 'value'),
+        State('new-region-weight', 'value')  # This captures any new user input
     )
-    def display_region_weight(selected_region):
+    def display_region_weight(selected_region, new_region_weight):
         if selected_region:
+            # Check if the selected region is "Unknown"
+            if selected_region == "Unknown":
+                # If region is "Unknown", enable the new region weight input
+                if new_region_weight is not None:  # Check if new_region_weight is provided
+                    return None, {'display': 'block'}, round(float(new_region_weight), 2)  # Format to 2 decimal places
+                else:
+                    return None, {'display': 'block'}, None  # Return None if no weight provided
+
+            # Get the region weight from the dataframe if the region is known
             region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight']
+
             if not region_weight.empty:
-                # Return the region weight and hide the new region weight input
-                return f"Region Weight: {region_weight.iloc[0]}", {'display': 'none'}
+                # Return the existing region weight as an integer, hide the input field, and return the weight
+                weight = round(float(region_weight.iloc[0]), 2)  # Round to two decimal places
+                return f"Region Weight: {weight}", {'display': 'none'}, weight
             else:
-                # No region weight available, show the input for the user to enter a new region weight
-                return "No region weight available, please enter a region weight.", {'display': 'block'}
-        # If no region is selected, hide the new region weight input
-        return "",{'display': 'none'}
+                # If no region weight exists for this region, enable the user to input one
+                if new_region_weight is not None:  # Check if new_region_weight is provided
+                    return None, {'display': 'block'}, round(float(new_region_weight), 2)  # Format to 2 decimal places
+                else:
+                    return None, {'display': 'block'}, None  # Return None if no weight provided
 
+        # If no region is selected, hide the input field and return no weight
+        return None, {'display': 'none'}, None
 
+        # If no region is selected, hide the input field and return no weight
+        return None, {'display': 'none'}, None
 
     # Callback to display the tactic score based on selection
     @app.callback(
-        Output('tactic-score', 'children'),
+        Output('tactic-weight-display', 'children'),
         Input('tactic-dropdown', 'value')
     )
     def update_tactic_score(selected_tactic):
         if selected_tactic:
-            # Replace with your logic to get the tactic score
-            tactic_score = df_final.loc[df_final['tactic-ID'] == selected_tactic, 'tactic-score']
-            return f"Tactic Weight: {tactic_score.mean():.2f}" if not tactic_score.empty else "Tactic Weight not available."
+            # Check if the selected tactic is "Unknown"
+            if selected_tactic == "Unknown":
+                return 0  # Return 0 for "Unknown" tactic
 
+            # Otherwise, lookup the tactic weight
+            tactic_weight = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-weight']
 
-    # Combined callback for APT name validation and analysis
+            # Return the tactic weight directly as an integer, if available
+            if not tactic_weight.empty:
+                return int(tactic_weight.values[0])  # Return integer value directly
+            else:
+                return "Tactic Weight not available."
+
+        return ""
+    # Callback to analyze and display results
     @app.callback(
-        Output('manual-output-container', 'children'),
+        [Output('manual-output-container', 'children'),
+         Output('error-message', 'children')],  # Output for the error message
         Input('manual-submit-button', 'n_clicks'),
-        Input('new-apt', 'value'),
         State('apt-selection', 'value'),
         State('apt-dropdown', 'value'),
+        State('new-apt', 'value'),
         State('new-tech', 'value'),
-        State('tactic-dropdown', 'value'),
+        State('tactic-weight-display', 'children'),
         State('region-dropdown', 'value'),
-        State('new-region-weight', 'value'),  # Get new region weight value
+        State('weight-region', 'data'),  # This now takes the actual region weight
+        State('new-region-weight', 'value'),
         State('new-cvss', 'value'),
-        State('new-cve-count', 'value'),
+        State('new-platform', 'value'),
+        State('new-impact-score', 'value'),
+        State('new-ioc-weight', 'value'),
         State('new-time', 'value')
     )
-    def handle_apt_analysis(n_clicks, apt_name, apt_selection, existing_apt, technique_count,
-                            tactic, region_weight, new_region_weight, cvss_score, cve_count, time):
+    def analyze(n_clicks, apt_selection, apt, new_apt, new_tech, tactic_weight_display, region,
+                weight_region, new_region_weight, cvss, new_platform, impact_score, ioc_weight, time):
         if n_clicks > 0:
-            # Validate APT name if adding new
-            if apt_selection == 'new':
-                if not apt_name or apt_name.strip() == '':
-                    return "Please provide a valid Threat Actor name."
-                if re.search(r'\s', apt_name.strip()):  # Check for spaces
-                    return "Please provide a name without spaces."
+            # Check for required inputs
+            missing_fields = []
 
-            # Create the new data entry
-            new_row = {
-                'apt': apt_name if apt_selection == 'new' else existing_apt,
-                'technique-id': technique_count,
-                'tactic-ID': tactic,
-                'region-weight': new_region_weight if new_region_weight is not None else region_weight,
-                # Use new region weight
-                'cvss-base-score': cvss_score,
-                'cve-count': cve_count,
-                'Time': time
-            }
+            if not apt_selection:
+                missing_fields.append("APT Selection")
+            if apt_selection == 'existing' and not apt:
+                missing_fields.append("Threat Actor (APT)")
+            if apt_selection == 'new' and not new_apt:
+                missing_fields.append("New Threat Actor")
+            if new_tech is None or new_tech == "":
+                missing_fields.append("No. of Techniques")
+            if tactic_weight_display is None or tactic_weight_display == "":
+                missing_fields.append("Tactic Weight")
+            if not region:
+                missing_fields.append("Region")
+            if weight_region is None and (new_region_weight is None or new_region_weight == ""):
+                missing_fields.append("Region Weight (either from dataset or input)")
+            if cvss is None or cvss == "":
+                missing_fields.append("CVSS Score")
+            if new_platform is None or new_platform == "":
+                missing_fields.append("Platform Count")
+            if impact_score is None or impact_score == "":
+                missing_fields.append("Impact Score")
+            if ioc_weight is None or ioc_weight == "":
+                missing_fields.append("IoC Weight")
+            if time is None or time == "":
+                missing_fields.append("Time (Years)")
 
-            # Convert the new row to a DataFrame
-            new_row_df = pd.DataFrame([new_row])  # Create a DataFrame for the new row
+            # If there are missing fields, return an error message
+            if missing_fields:
+                error_message = f"Please fill in the following required fields: {', '.join(missing_fields)}."
+                return html.Div(), error_message
 
-            # Concatenate the new row to df_final
-            global df_final  # Declare df_final as global to modify it
-            df_final = pd.concat([df_final, new_row_df], ignore_index=True)  # Append the new row
+            # Prepare output data
+            output_data = []
+            if apt_selection == 'existing':
+                output_data.append(("Selected Threat Actor", apt))
+            else:
+                output_data.append(("New Threat Actor", new_apt))
 
+            output_data.append(("Number of Techniques", new_tech))
 
-            return f"Analysis complete for {apt_name if apt_selection == 'new' else existing_apt}."
+            # Check and set tactic weight safely
+            tactic_weight = int(tactic_weight_display) if tactic_weight_display else 0
+            output_data.append(("Selected Tactic Weight", tactic_weight))
 
-        raise PreventUpdate  # Prevent updates if no button clicks
+            output_data.append(("Selected Origin Region", region))
 
+            # Use `weight_region` if available, otherwise use `new_region_weight`
+            region_weight = weight_region if weight_region is not None else (
+                int(new_region_weight) if new_region_weight else 0)
+            output_data.append(("Region Weight", region_weight))
 
+            output_data.append(("CVSS Score", cvss))
+            output_data.append(("Platform Count", new_platform))
+            output_data.append(("Impact Score (CVE Count)", impact_score))
+            output_data.append(("IoC Weight", ioc_weight))
+            output_data.append(("Time (No. of Years)", time))
+
+            # Calculate complexity
+            complexity = int(new_tech) + int(new_platform) + tactic_weight
+
+            # Define the integrate_time function
+            def integrate_time(t):
+                return (t ** 2 - 1) / 2
+
+            # Calculate Prevalence using integration of time
+            prevalence = (region_weight +
+                          int(cvss) +
+                          int(new_platform) +
+                          int(impact_score) +
+                          int(ioc_weight) +
+                          integrate_time(int(time)))
+
+            # Calculate the Final Threat Actor Score
+            score = (complexity * prevalence) / 100
+
+            # Define a function to categorize the Threat Actor Score Percentage
+            def categorize_score(score):
+                if 0 <= score <= 19.99:
+                    return 'Very Low'
+                elif 20 <= score <= 39.99:
+                    return 'Low'
+                elif 40 <= score <= 59.99:
+                    return 'Moderate'
+                elif 60 <= score <= 79.99:
+                    return 'Critical'
+                else:
+                    return 'Highly Critical'
+
+            # Directly categorize the Threat Actor Score
+            category = categorize_score(score)
+
+            # Append complexity, prevalence, and score to output data
+            output_data.append(("Complexity", complexity))
+            output_data.append(("Prevalence", prevalence))
+            output_data.append(("Threat Actor Score", score))
+            output_data.append(("Threat Actor Category", category))
+
+            # Create table output
+            output_table = html.Table([
+                html.Thead(html.Tr([html.Th("Description"), html.Th("Value")])),
+                html.Tbody([html.Tr([html.Td(desc), html.Td(val)]) for desc, val in output_data])
+            ])
+
+            return html.Div([output_table]), ""  # Wrap the table in a Div
+
+        raise PreventUpdate
