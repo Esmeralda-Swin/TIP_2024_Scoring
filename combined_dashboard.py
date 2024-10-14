@@ -13,6 +13,7 @@ from scipy.constants import value
 # Import autonomous.py and manual.py (these should contain layouts and callback functions)
 from autonomous import auto_layout, auto_callbacks
 from manual import manual_layout, manual_callbacks
+from novel import novel_layout, novel_callbacks
 
 # Import the visualization functions from existing files
 from diagram.CVECWEScatterPlot import create_cve_cwe_scatter_plot
@@ -89,6 +90,8 @@ def render_content(tab):
         return auto_layout  # Autonomous tab content
     elif tab == 'manual-tab':
         return manual_layout(df)  # Manual tab content
+    elif tab == 'novelty-tab':  # Add this line for the Novelty tab
+        return novel_layout  # Novelty tab content
     elif tab == 'visualisation-tab':
         return html.Div([
             html.H3("Visualization Dashboard",style={'textAlign': 'center', 'color': colors['text']}),
@@ -279,6 +282,7 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
 # Register callbacks from autonomous and manual files
 auto_callbacks(app)
 manual_callbacks(app)
+novel_callbacks(app)  # Add this line to register novel callbacks
 
 # Run the app
 if __name__ == '__main__':

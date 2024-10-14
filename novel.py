@@ -1,3 +1,4 @@
+from dash import dcc, html, Input, Output, Dash
 import pandas as pd
 import plotly.express as px
 
@@ -12,6 +13,9 @@ df_techniques.columns = ['apt', 'Number_of_Techniques_Used']
 
 # Combine with the main dataset
 df_final = pd.merge(df_techniques, df, on='apt')
+
+# Attacker category
+df_category = df.groupby('apt')['attacker-category'].nunique().reset_index()
 
 # Fill NaN values
 for column in ['Number_of_Techniques_Used', 'platform-count', 'tactic-weight', 'region-weight',
@@ -54,23 +58,22 @@ for year in range(2019, 2051):
     for index, row in df_avg_scores.iterrows():
         if year in range(2019, 2024):  # For the last 5 years, adjust only Prevalence
             adjusted_prevalence = row['Prevalence']  # Prevalence already incorporates time factor
-
             probability = (row['Complexity'] * adjusted_prevalence)
         else:  # For 2024 onwards, apply a growth factor to Prevalence
             growth_factor = 1 + 0.05 * (year - 2024)  # Assume 5% growth
             current_complexity = row['Complexity'] * growth_factor
             current_prevalence = row['Prevalence'] * growth_factor
-
             probability = ((current_complexity * current_prevalence * df_final['vulnerability-score'].mean()) /
                            defense_scores[year])  # Use the changing defense score
 
         # Append results including Probability
         results.append({
             'Year': year,
-            'APT': row['apt'],
+            'Threat Actor': row['apt'],
             'Complexity': row['Complexity'],
             'Prevalence': row['Prevalence'],
-            'Probability': probability
+            'Probability': probability,
+            'Attacker Category': df.loc[df['apt'] == row['apt'], 'attacker-category'].iloc[0]  # Add attacker category
         })
 
 df_results = pd.DataFrame(results)
@@ -81,16 +84,53 @@ max_probability = df_results['Probability'].max()
 df_results['Probability_Percentage'] = ((df_results['Probability'] - min_probability) /
                                         (max_probability - min_probability)) * 100
 
-# Create the interactive scatter plot
-fig = px.scatter(df_results,
-                 x='Year',
-                 y='Probability_Percentage',
-                 color='APT',
-                 hover_name='APT',
-                 hover_data={'Year': True},
-                 title='Variation of Threat Actor Score vs. Probability Percentage (2019-2050)',
-                 labels={'Probability_Percentage': 'Probability Percentage'},
-                 trendline='ols')  # Optional: Add a trendline for better visualization
+# Define the layout for the novel app
+# Define the layout for the novel app
+novel_layout = html.Div([
+    html.H1("Future Threat Actor Score Modelling"),
+    dcc.Dropdown(
+        id='view-dropdown',
+        options=[
+            {'label': 'By Threat Actor', 'value': 'Threat Actor'},
+            {'label': 'By Attacker Category', 'value': 'Attacker Category'}
+        ],
+        value='Threat Actor',  # Default value
+        clearable=False
+    ),
+    dcc.Graph(id='scatter-plot', config={'displayModeBar': True}),  # Interactive scatter plot
+])
 
-# Show the plot
-fig.show()
+
+
+
+# # Define the callbacks for the novel app
+def novel_callbacks(app):
+    @app.callback(
+        Output('scatter-plot', 'figure'),
+        Input('view-dropdown', 'value')  # Input from the dropdown to select the view
+    )
+    def update_scatter_plot(selected_view):
+        # Create the interactive scatter plot
+        if selected_view == 'Threat Actor':
+            color_col = 'Threat Actor'
+        else:
+            color_col = 'Attacker Category'  # Use attacker category for color
+
+        fig = px.scatter(
+            df_results,
+            x='Year',
+            y='Probability_Percentage',
+            color=color_col,
+            hover_name='Threat Actor',  # Always show Threat Actor name in hover
+            hover_data={
+                'Year': True,
+                'Probability_Percentage': True,
+                'Attacker Category': True  # Show Attacker Category if needed
+            },
+            title='Variation of Threat Actor Score vs. Probability of Attack (%) (2019-2050)',
+            labels={'Probability_Percentage': 'Probability of Attack (%)'},  # Updated label
+            trendline='ols'  # Optional: Add a trendline for better visualization
+        )
+
+        return fig
+
