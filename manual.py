@@ -144,7 +144,7 @@ def manual_layout(df):
             ),
             html.Div(style={'height': '10px'}),  # Spacing
 
-            html.Label(""),
+            html.Label("Select a Tactic: "),
             dcc.Dropdown(
                 id='tactic-dropdown',
                 options=[{'label': f"{tactic_id} - {tactic_description}", 'value': tactic_id}
@@ -173,7 +173,7 @@ def manual_layout(df):
             html.Div(id='weight-region', style={'display': 'none'}),  # Add the hidden Div
 
             # Input field for new region weight
-            html.Label("No existing region weight. Enter a region weight"),
+            html.Label(""),
             dcc.Input(
                 id='new-region-weight',
                 type='number',
@@ -286,33 +286,18 @@ def manual_callbacks(app):
     )
     def display_region_weight(selected_region, new_region_weight):
         if selected_region:
-            # Check if the selected region is "Unknown"
-            if selected_region == "Unknown":
-                # If region is "Unknown", enable the new region weight input
-                if new_region_weight is not None:  # Check if new_region_weight is provided
-                    return None, {'display': 'block'}, round(float(new_region_weight), 2)  # Format to 2 decimal places
-                else:
-                    return None, {'display': 'block'}, None  # Return None if no weight provided
+            # Assuming 'Region Weight' is a column in your dataframe (adjust as necessary)
+            region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight'].values
 
-            # Get the region weight from the dataframe if the region is known
-            region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight']
-
-            if not region_weight.empty:
-                # Return the existing region weight as an integer, hide the input field, and return the weight
-                weight = round(float(region_weight.iloc[0]), 2)  # Round to two decimal places
-                return f"Region Weight: {weight}", {'display': 'none'}, weight
+            if region_weight.size > 0:
+                # Format the weight to 2 decimal points
+                formatted_weight = f"{region_weight[0]:.2f}"
+                return f"Region Weight for {selected_region}: {formatted_weight}", {'display': 'none'}, region_weight[
+                    0]
             else:
-                # If no region weight exists for this region, enable the user to input one
-                if new_region_weight is not None:  # Check if new_region_weight is provided
-                    return None, {'display': 'block'}, round(float(new_region_weight), 2)  # Format to 2 decimal places
-                else:
-                    return None, {'display': 'block'}, None  # Return None if no weight provided
+                return "No existing region weight. Enter a region weight:", {'display': 'block'}, None
 
-        # If no region is selected, hide the input field and return no weight
-        return None, {'display': 'none'}, None
-
-        # If no region is selected, hide the input field and return no weight
-        return None, {'display': 'none'}, None
+        return "", {'display': 'none'}, None  # Reset if no region is selected
 
     # Callback to display the tactic score based on selection
     @app.callback(
@@ -453,7 +438,7 @@ def manual_callbacks(app):
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
             output_data.append(("Prevalence", prevalence))
-            output_data.append(("Threat Actor Score", score))
+            output_data.append(("Threat Actor Score(%)", score))
             output_data.append(("Threat Actor Category", category))
 
             # Create table output
