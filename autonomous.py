@@ -79,7 +79,7 @@ auto_layout = html.Div([
     html.H3("Select a Threat Actor"),
     dcc.Dropdown(
         id='auto-apt-dropdown',
-        options=[{'label': apt, 'value': apt} for apt in df['apt'].unique()],
+        options=[{'label': apt, 'value': apt} for apt in sorted(df['apt'].unique())],  # Sort APTs alphabetically
         placeholder="Select APT"
     ),
     html.Button('Submit', id='auto-submit-button', n_clicks=0, style={'margin-top': '20px'}),

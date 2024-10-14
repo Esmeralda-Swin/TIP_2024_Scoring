@@ -116,7 +116,7 @@ def manual_layout(df):
 
             dcc.Dropdown(
                 id='apt-dropdown',
-                options=[{'label': apt, 'value': apt} for apt in df['apt'].unique()],
+                options=[{'label': apt, 'value': apt} for apt in sorted(df['apt'].unique())],  # Sort APTs alphabetically
                 placeholder="Select a Threat Actor",
                 disabled=False  # Enabled by default
             ),
