@@ -4,6 +4,10 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import pandas as pd
+import dash_bootstrap_components as dbc
+from matplotlib import colors
+from requests.packages import target
+
 from scipy.constants import value
 
 # Import autonomous.py and manual.py (these should contain layouts and callback functions)
@@ -25,7 +29,7 @@ from diagram.PlatformIoCStackedBarChart import create_platform_ioc_stacked_bar_c
 from diagram.APTTechniqueTacticChart import create_techniques_tactics_chart
 
 # Initialize the Dash app with callback exception suppression
-app = dash.Dash(__name__, suppress_callback_exceptions=True)
+app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.FLATLY])
 
 # Load your dataset
 excel = 'VisualAmended_v9.xlsx'
@@ -46,11 +50,19 @@ df_expanded['platform'] = df_expanded['platform'].str.strip()
 df_expanded = df_expanded[df_expanded['platform'].apply(lambda x: isinstance(x, str))]
 platform_options = [{'label': platform, 'value': platform} for platform in df_expanded['platform'].unique()]
 
-# Define the layout of the dashboard
-app.layout = html.Div([
-    html.H1("APT and Vulnerability Dashboard", style={'textAlign': 'center'}),
+# Define color scheme
+colors = {
+    'background': '#f9f9f9',
+    'text': '#333333'
+}
 
-    # Create tabs
+
+# Define the layout of the dashboard
+app.layout = html.Div(style={'font-family': 'Open Sans, sans-serif','backgroundColor': colors['background'], 'padding': '20px', 'margin': '20px'}, children=[
+    # Title with centered text
+    html.H1("APT and Vulnerability Dashboard", style={'textAlign': 'center', 'color': colors['text']}),
+
+    # Create tabs for switching between sections
     dcc.Tabs(id="tabs", value='summary-tab', children=[
         dcc.Tab(label='Summary', value='summary-tab'),
         dcc.Tab(label='Autonomous', value='auto-tab'),
@@ -60,7 +72,7 @@ app.layout = html.Div([
     ]),
 
     # Tab content container
-    html.Div(id='tabs-content')
+    html.Div(id='tabs-content'),
 ])
 
 
@@ -76,38 +88,52 @@ def render_content(tab):
         return manual_layout(df)  # Manual tab content
     elif tab == 'visualisation-tab':
         return html.Div([
-            html.H3("Visualization Dashboard"),
+            html.H3("Visualization Dashboard",style={'textAlign': 'center', 'color': colors['text']}),
 
             html.Div([
-                html.Button('CVE-Related Visualizations', id='cve-button', n_clicks=0, className='button-83'),
-                html.Button('APT-Related Visualizations', id='apt-button', n_clicks=0, className='button-83'),
-                html.Button('CWE-Related Visualizations', id='cwe-button', n_clicks=0, className='button-83')
-            ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center'}),
+                html.Button('CVE-Related Visualizations', id='cve-button', n_clicks=0, className='btn-hover'),
+                html.Button('APT-Related Visualizations', id='apt-button', n_clicks=0, className='btn-hover'),
+                html.Button('CWE-Related Visualizations', id='cwe-button', n_clicks=0, className='btn-hover')
+            ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'margin': '20px'}),
 
             # Dropdowns for filtering (hidden by default, shown based on selection)
             html.Div([dcc.Dropdown(id="cve-filter-dropdown",
                                    options=[{'label': cve, 'value': cve} for cve in df['cve'].unique()],
-                                   multi=True, placeholder="Select CVE")], style={'display': 'none'},
+                                   multi=True, placeholder="Select CVE"),
+            dbc.Tooltip(
+            "Select multiple CVEs for filtering",
+            target="cve-filter-dropdown",
+            placement="bottom"
+            )], style={'display': 'none', 'margin-bottom': '20px', 'margin-top': '10px'},
                      id='cve-filter-container'),
 
             html.Div([dcc.Dropdown(id="apt-filter-dropdown",
                                    options=[{'label': apt, 'value': apt} for apt in df['apt'].unique()],
-                                   multi=True, placeholder="Select APT")], style={'display': 'none'},
+                                   multi=True, placeholder="Select APT"), dbc.Tooltip(
+        "Select multiple CWEs for filtering",
+        target="apt-filter-dropdown",
+        placement="bottom"
+    )], style={'display': 'none', 'margin-bottom': '20px', 'margin-top': '10px'},
                      id='apt-filter-container'),
 
             html.Div([dcc.Dropdown(id="cwe-filter-dropdown",
                                    options=[{'label': cwe, 'value': cwe} for cwe in df['cwe-id'].unique()],
-                                   multi=True, placeholder="Select CWE")], style={'display': 'none'},
+                                   multi=True, placeholder="Select CWE"), dbc.Tooltip(
+        "Select multiple APTs for filtering",
+            target="cwe-filter-dropdown",
+            placement="bottom"
+    )], style={'display': 'none', 'margin-bottom': '20px', 'margin-top': '10px'},
                      id='cwe-filter-container'),
 
             html.Div([dcc.Dropdown(id="platform-selection-dropdown", options=platform_options, multi=True,
                                    placeholder="Select Platform")],
                      style={'display': 'none'}, id='platform-filter-container'),
 
+
             # Visual content container
             html.Div(id='visual-content')
         ])
-
+html.Footer("2024-HS2-COS70008-Technology Innovation Project", style={'textAlign': 'center', 'padding': '20px', 'backgroundColor': '#f9f9f9'})
 
 
 # Visualisation Tab: Callback for buttons and filtering
@@ -152,12 +178,19 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
         scatter_plot = create_cve_cwe_scatter_plot(filtered_scatter)
         heatmap_fig = create_cve_technique_heatmap(filtered_df)
 
-        content = html.Div([
-            html.H3('CVE-Related Visualizations'),
-            dcc.Graph(figure=bar_chart),
-            dcc.Graph(figure=scatter_plot),
-            dcc.Graph(figure=heatmap_fig),
-        ])
+        content = dbc.Container([
+            html.H3('CVE-Related Visualizations', style={'textAlign': 'center', 'color': colors['text']}),
+
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=bar_chart), width=6),
+                dbc.Col(dcc.Graph(figure=scatter_plot), width=6),
+            ]),
+
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=heatmap_fig), width=12)
+            ])
+        ], fluid=True, style={'margin-bottom': '20px'})
+
 
     elif apt_clicks and apt_clicks > cve_clicks and apt_clicks > cwe_clicks:
         # Show APT-Related Visualizations and APT dropdown
@@ -182,16 +215,26 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
         bubble_apt_cvss = create_bubble_chart_apt_cvss(filtered_df, selected_apts)
         chart_apt_technique_tactic = create_techniques_tactics_chart(filtered_df, selected_apts)
 
-        content = html.Div([
-            html.H3("APT-Related Visualizations"),
-            dcc.Graph(figure=stacked_bar_chart),
-            dcc.Graph(figure=chart_apt_technique_tactic),
-            dcc.Graph(figure=network_graph_apt36_technique),
-            dcc.Graph(figure=network_graph_apt36_technique_tactics),
-            dcc.Graph(figure=network_graph_apt36_technique_tactics_2),
-            dcc.Graph(figure=heatmap_apt_cvss),
-            dcc.Graph(figure=bubble_apt_cvss),
-        ])
+        # Use grid layout for visualizations
+
+        content = dbc.Container([
+            html.H3("APT-Related Visualizations",style={'textAlign': 'center', 'color': colors['text']}),
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=stacked_bar_chart), width=6),
+                dbc.Col(dcc.Graph(figure=chart_apt_technique_tactic), width=6),
+            ]),
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=network_graph_apt36_technique), width=6),
+                dbc.Col(dcc.Graph(figure=network_graph_apt36_technique_tactics), width=6),
+            ]),
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=network_graph_apt36_technique_tactics_2), width=12),
+            ]),
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=heatmap_apt_cvss), width=6),
+                dbc.Col(dcc.Graph(figure=bubble_apt_cvss), width=6),
+            ])
+        ], fluid=True, style={'margin-bottom': '20px'})
 
     elif cwe_clicks and cwe_clicks > cve_clicks and cwe_clicks > apt_clicks:
         # Show CWE-Related Visualizations and CWE + platform dropdowns
@@ -212,12 +255,18 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
         cve_cwe_scatter_plot = create_cve_cwe_scatter_plot(df_scatter)
         platform_ioc_stacked_bar_chart = create_platform_ioc_stacked_bar_chart(filtered_df, selected_platforms)
 
-        content = html.Div([
-            html.H3('CWE-Related Visualizations'),
-            dcc.Graph(figure=cwe_platform_heatmap),
-            dcc.Graph(figure=cve_cwe_scatter_plot),
-            dcc.Graph(figure=platform_ioc_stacked_bar_chart),
-        ])
+        content = dbc.Container([
+            html.H3('CWE-Related Visualizations', style={'textAlign': 'center', 'color': colors['text']}),
+
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=cwe_platform_heatmap), width=6),
+                dbc.Col(dcc.Graph(figure=cve_cwe_scatter_plot), width=6),
+            ]),
+
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=platform_ioc_stacked_bar_chart), width=12)
+            ])
+        ], fluid=True ,style={'margin-bottom': '20px'})
 
     # Always return the content and dropdown styles (even if no buttons are clicked)
     return content, cve_dropdown_style, apt_dropdown_style, cwe_dropdown_style, platform_dropdown_style
