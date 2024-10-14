@@ -6,7 +6,7 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import dash_bootstrap_components as dbc
 from matplotlib import colors
-from requests.packages import target
+#from requests.packages import target
 
 from scipy.constants import value
 
