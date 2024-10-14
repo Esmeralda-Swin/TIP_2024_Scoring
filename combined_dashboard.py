@@ -20,9 +20,12 @@ from diagram.CWEPlatformHeatmap import create_cwe_platform_heatmap
 from diagram.CVECWEBarChart import create_cve_cwe_bar_chart
 from diagram.AptPlatformStackedBarChart import create_apt_platform_stacked_bar_chart
 from diagram.CVETechniquesHeatmap import create_cve_technique_heatmap
-from diagram.Apt36AssociatedTechniques import create_apt_c36_network_techniques
-from diagram.Apt36AssociatedTechniquesTactics import create_apt_c36_network_techniques_tactics
-from diagram.Apt36AssociatedTechniquesTactics_2 import create_apt_c36_network_techniques_tactics_2
+#from diagram.Apt36AssociatedTechniques import create_apt_c36_network_techniques
+from diagram.Apt36AssociatedTechniques import create_apt_network_techniques
+# from diagram.Apt36AssociatedTechniquesTactics import create_apt_c36_network_techniques_tactics
+from diagram.Apt36AssociatedTechniquesTactics import create_apt_network_techniques_tactics
+#from diagram.Apt36AssociatedTechniquesTactics_2 import create_apt_c36_network_techniques_tactics_2
+from diagram.Apt36AssociatedTechniquesTactics_2 import create_apt_network_techniques_tactics_cve
 from diagram.AptCVEBubbleChart import create_bubble_chart_apt_cvss
 from diagram.AptCVEHeatMap import create_heatmap_apt_cvss
 from diagram.PlatformIoCStackedBarChart import create_platform_ioc_stacked_bar_chart
@@ -208,9 +211,9 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
 
         # Generate APT-related visualizations
         stacked_bar_chart = create_apt_platform_stacked_bar_chart(filtered_df, selected_apts, selected_platforms)
-        network_graph_apt36_technique = create_apt_c36_network_techniques(filtered_df)
-        network_graph_apt36_technique_tactics = create_apt_c36_network_techniques_tactics(filtered_df)
-        network_graph_apt36_technique_tactics_2 = create_apt_c36_network_techniques_tactics_2(filtered_df)
+        network_graph_apt36_technique = create_apt_network_techniques(filtered_df, selected_apts)
+        network_graph_apt36_technique_tactics = create_apt_network_techniques_tactics(filtered_df, selected_apts)
+        network_graph_apt36_technique_tactics_2 = create_apt_network_techniques_tactics_cve(filtered_df, selected_apts)
         heatmap_apt_cvss = create_heatmap_apt_cvss(filtered_df, selected_apts)
         bubble_apt_cvss = create_bubble_chart_apt_cvss(filtered_df, selected_apts)
         chart_apt_technique_tactic = create_techniques_tactics_chart(filtered_df, selected_apts)
