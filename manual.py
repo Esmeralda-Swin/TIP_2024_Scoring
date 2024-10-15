@@ -32,6 +32,12 @@ df_techniques.columns = ['apt', 'Number_of_Techniques_Used']
 # Combine to the dataset
 df_final = pd.merge(df_techniques, df, on='apt')
 
+colors = {
+    'background': '#f9f9f9',
+    'text': '#333333'
+}
+
+
 # # Calculate Complexity
 # df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
 #
@@ -100,7 +106,8 @@ def manual_layout(df):
 
     return dcc.Tab(label='Manual', children=[
         html.Div([
-            html.H3("Configure Individual Algorithm Parameters"),
+            html.H2("Configure Individual Algorithm Parameters",
+                    style={'textAlign': 'center', 'color': colors['text']}),
             html.Div(id='error-message', style={'color': 'red', 'margin-bottom': '10px'}),
             html.Label("Select a Threat Actor:"),
             dcc.RadioItems(
@@ -116,7 +123,8 @@ def manual_layout(df):
 
             dcc.Dropdown(
                 id='apt-dropdown',
-                options=[{'label': apt, 'value': apt} for apt in sorted(df['apt'].unique())],  # Sort APTs alphabetically
+                options=[{'label': apt, 'value': apt} for apt in sorted(df['apt'].unique())],
+                # Sort APTs alphabetically
                 placeholder="Select a Threat Actor",
                 disabled=False  # Enabled by default
             ),
@@ -243,7 +251,10 @@ def manual_layout(df):
             html.Div(style={'height': '10px'}),  # Spacing
 
             html.Div(id='manual-output-container', style={'margin-top': '20px'})
-        ])
+        ], style={
+            'height': '100vh',  # Set the height to the full viewport height
+            'padding': '10px'  # Add padding if necessary
+        })
     ])
 
 
@@ -259,7 +270,7 @@ def manual_callbacks(app):
     def update_apt_inputs(selection):
         if selection == 'existing':
             # Show the dropdown and hide the new APT input field
-            return  {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
+            return {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
         else:
             # Hide the dropdown and show the new APT input field and label
             return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}
@@ -320,6 +331,7 @@ def manual_callbacks(app):
                 return "Tactic Weight not available."
 
         return ""
+
     # Callback to analyze and display results
     @app.callback(
         [Output('manual-output-container', 'children'),

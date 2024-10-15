@@ -2,6 +2,12 @@ from dash import dcc, html, Input, Output, Dash
 import pandas as pd
 import plotly.express as px
 
+# Define colors
+colors = {
+    'background': '#f9f9f9',
+    'text': '#333333'
+}
+
 # Load the dataset
 excel = 'novel.xlsx'
 data_sheet = 'filtered'
@@ -87,7 +93,7 @@ df_results['Probability_Percentage'] = ((df_results['Probability'] - min_probabi
 # Define the layout for the novel app
 # Define the layout for the novel app
 novel_layout = html.Div([
-    html.H1("Future Threat Actor Score Modelling"),
+    html.H2("Future Threat Actor Score Modelling", style={'textAlign': 'center', 'color': colors['text']}),
     dcc.Dropdown(
         id='view-dropdown',
         options=[
@@ -98,9 +104,10 @@ novel_layout = html.Div([
         clearable=False
     ),
     dcc.Graph(id='scatter-plot', config={'displayModeBar': True}),  # Interactive scatter plot
-])
-
-
+], style={
+    'height': '100vh',  # Set the height to the full viewport height
+    'padding': '10px'  # Add padding if necessary
+})
 
 
 # # Define the callbacks for the novel app
@@ -129,8 +136,7 @@ def novel_callbacks(app):
             },
             title='Variation of Threat Actor Score vs. Probability of Attack (%) (2019-2050)',
             labels={'Probability_Percentage': 'Probability of Attack (%)'},  # Updated label
-            trendline='ols'  # Optional: Add a trendline for better visualization
+            # trendline='ols'  # Optional: Add a trendline for better visualization
         )
 
         return fig
-

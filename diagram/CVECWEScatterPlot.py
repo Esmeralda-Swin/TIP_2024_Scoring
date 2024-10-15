@@ -20,4 +20,13 @@ def create_cve_cwe_scatter_plot(df_scatter, selected_cwe=None, selected_cvss=Non
                               labels={'cwe_num': 'CWE (as Numeric Value)', 'cvss-base-score': 'CVSS Score'},
                               color='cvss-base-score',
                               color_continuous_scale='Blues')
+    scatter_plot.update_layout(
+        coloraxis_colorbar=dict(
+            title='CVSS Score',
+            title_side='right',
+            title_font=dict(size=14),
+            lenmode="pixels",  # Set a fixed size for the colorbar
+            len=300  # Adjust the length of the colorbar
+        )
+    )
     return scatter_plot

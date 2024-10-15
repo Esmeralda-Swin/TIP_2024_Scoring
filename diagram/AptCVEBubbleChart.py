@@ -24,9 +24,20 @@ def create_bubble_chart_apt_cvss(df, selected_apts=None):
         size='Avg_CVSS',
         color='Avg_CVSS',
         title='Bubble Chart of CVEs by APT Group and Severity',
-        labels={'APT': 'APT Group', 'CVE_Count': 'Number of CVEs', 'Avg_CVSS': 'Average CVSS Score'},
+        labels={'APT': 'APT Group', 'CVE_Count': 'Number of CVEs', 'Avg_CVSS': 'Average CVSS'},
         color_continuous_scale='Blues',
         size_max=15
+    )
+
+    # Update the colorbar properties to make the label horizontal
+    fig.update_layout(
+        coloraxis_colorbar=dict(
+            title='Average CVSS',
+            title_side='right',
+            title_font=dict(size=14),
+            lenmode="pixels",  # Set a fixed size for the colorbar
+            len=300  # Adjust the length of the colorbar
+        )
     )
 
     return fig

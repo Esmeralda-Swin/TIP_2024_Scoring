@@ -19,6 +19,12 @@ df_final = pd.merge(df_techniques, df, on='apt')
 # Calculate Complexity
 df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
 
+colors = {
+    'background': '#f9f9f9',
+    'text': '#333333'
+}
+
+
 # Integrate Time
 def integrate_time(t): return (t ** 2 - 1) / 2
 
@@ -46,45 +52,51 @@ df_avg_scores['Prevalence'] = df_avg_scores['Prevalence'].round(2)
 df_avg_scores['Threat_Actor_Score'] = df_avg_scores['Threat_Actor_Score'].round(2)
 
 # Calculate min and max scores to be used for the percentage calculation
-min_score = (df_avg_scores['Threat_Actor_Score'].min())-1
-max_score = (df_avg_scores['Threat_Actor_Score'].max())+1
+min_score = (df_avg_scores['Threat_Actor_Score'].min()) - 1
+max_score = (df_avg_scores['Threat_Actor_Score'].max()) + 1
 
 # Calculate Threat Actor Score as a percentage
 df_avg_scores['Threat_Actor_Score_Percentage'] = ((df_avg_scores['Threat_Actor_Score'] - min_score) / (
-            max_score - min_score)) * 100
+        max_score - min_score)) * 100
 df_avg_scores['Threat_Actor_Score_Percentage'] = df_avg_scores['Threat_Actor_Score_Percentage'].round(
     2)  # Round to 2 decimals
 
+
 # Define a function to categorize the Threat Actor Score Percentage
 def categorize_score(score):
-    if 0<=score<= 19.99:
+    if 0 <= score <= 19.99:
         return 'Very Low'
-    elif 20<=score<= 39.99:
+    elif 20 <= score <= 39.99:
         return 'Low'
-    elif 40<=score<= 59.99:
+    elif 40 <= score <= 59.99:
         return 'Moderate'
-    elif 60<=score<= 79.99:
+    elif 60 <= score <= 79.99:
         return 'Critical'
     else:
         return 'Highly Critical'
+
 
 # Apply the categorization function to the Threat Actor Score Percentage column
 df_avg_scores['Threat_Actor_Category'] = df_avg_scores['Threat_Actor_Score_Percentage'].apply(categorize_score)
 
 # Display the final results with only one entry per APT
-print(df_avg_scores[['apt', 'Complexity', 'Prevalence', 'Threat_Actor_Score_Percentage','Threat_Actor_Category']])
+print(df_avg_scores[['apt', 'Complexity', 'Prevalence', 'Threat_Actor_Score_Percentage', 'Threat_Actor_Category']])
 
 # Auto tab layout
 auto_layout = html.Div([
-    html.H3("Select a Threat Actor"),
+    html.H2("Select a Threat Actor", style={'color': colors['text']}),
     dcc.Dropdown(
         id='auto-apt-dropdown',
         options=[{'label': apt, 'value': apt} for apt in sorted(df['apt'].unique())],  # Sort APTs alphabetically
         placeholder="Select APT"
     ),
     html.Button('Submit', id='auto-submit-button', n_clicks=0, style={'margin-top': '20px'}),
-    html.Div(id='auto-output-container',)
-])
+    html.Div(id='auto-output-container', )
+], style={
+    'height': '100vh',  # Set the height to the full viewport height
+    'padding': '10px'  # Add padding if necessary
+})
+
 
 # Callback for auto submit button
 def auto_callbacks(app):
@@ -118,5 +130,5 @@ def auto_callbacks(app):
             ])
         raise PreventUpdate
 
-#print loaded data
-#print(df.head())  # Check the loaded data
+# print loaded data
+# print(df.head())  # Check the loaded data
