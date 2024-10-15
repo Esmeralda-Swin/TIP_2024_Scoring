@@ -311,7 +311,7 @@ def manual_callbacks(app):
         if selected_tactic:
             # Check if the selected tactic is "Unknown"
             if selected_tactic == "Unknown":
-                return 0  # Return 0 for "Unknown" tactic
+                return 14   # Return 0 for "Unknown" tactic
 
             # Otherwise, lookup the tactic weight
             tactic_weight = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-weight']
