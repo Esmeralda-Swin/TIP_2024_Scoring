@@ -148,8 +148,8 @@ def novel_callbacks(app):
         Input('view-dropdown', 'value')  # Input from the dropdown to select the view
     )
     def update_scatter_plot(selected_view):
-        # Filter the data to only include years from 2024 onwards
-        df_filtered = df_results[df_results['Year'] >= 2024]
+        # Filter the data to only include years from 2025 onwards
+        df_filtered = df_results[df_results['Year'] >= 2025]
 
         # Create the interactive scatter plot
         if selected_view == 'Threat Actor':
