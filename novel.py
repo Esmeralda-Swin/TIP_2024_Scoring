@@ -110,13 +110,47 @@ novel_layout = html.Div([
 })
 
 
-# # Define the callbacks for the novel app
+# # # Define the callbacks for the novel app
+# def novel_callbacks(app):
+#     @app.callback(
+#         Output('scatter-plot', 'figure'),
+#         Input('view-dropdown', 'value')  # Input from the dropdown to select the view
+#     )
+#     def update_scatter_plot(selected_view):
+#         # Create the interactive scatter plot
+#         if selected_view == 'Threat Actor':
+#             color_col = 'Threat Actor'
+#         else:
+#             color_col = 'Attacker Category'  # Use attacker category for color
+#
+#         fig = px.scatter(
+#             df_results,
+#             x='Year',
+#             y='Probability_Percentage',
+#             color=color_col,
+#             hover_name='Threat Actor',  # Always show Threat Actor name in hover
+#             hover_data={
+#                 'Year': True,
+#                 'Probability_Percentage': True,
+#                 'Attacker Category': True  # Show Attacker Category if needed
+#             },
+#             title='Variation of Threat Actor Score vs. Probability of Attack (%) (2019-2050)',
+#             labels={'Probability_Percentage': 'Probability of Attack (%)'},  # Updated label
+#             trendline='ols'  # Optional: Add a trendline for better visualization
+#         )
+#
+#         return fig
+
+# Define the callbacks for the novel app
 def novel_callbacks(app):
     @app.callback(
         Output('scatter-plot', 'figure'),
         Input('view-dropdown', 'value')  # Input from the dropdown to select the view
     )
     def update_scatter_plot(selected_view):
+        # Filter the data to only include years from 2024 onwards
+        df_filtered = df_results[df_results['Year'] >= 2024]
+
         # Create the interactive scatter plot
         if selected_view == 'Threat Actor':
             color_col = 'Threat Actor'
@@ -124,7 +158,7 @@ def novel_callbacks(app):
             color_col = 'Attacker Category'  # Use attacker category for color
 
         fig = px.scatter(
-            df_results,
+            df_filtered,  # Use the filtered DataFrame
             x='Year',
             y='Probability_Percentage',
             color=color_col,
@@ -134,9 +168,10 @@ def novel_callbacks(app):
                 'Probability_Percentage': True,
                 'Attacker Category': True  # Show Attacker Category if needed
             },
-            title='Variation of Threat Actor Score vs. Probability of Attack (%) (2019-2050)',
+            title='Variation of Threat Actor Score vs. Probability of Attack (%) (2024-2050)',
             labels={'Probability_Percentage': 'Probability of Attack (%)'},  # Updated label
             trendline='ols'  # Optional: Add a trendline for better visualization
         )
 
         return fig
+
