@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 app = Dash(__name__)
 
 # Load country names from GeoDataFrame
-geojson_path = r'C:\Users\disha\Tech innovation Project\TechProject\TIP_2024_Scoring\ne_10m_admin_0_countries'  # Update this path
+geojson_path = r'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'  # Update this path
 world = gpd.read_file(geojson_path)
 
 # Extract the list of country names and sort in ascending order
@@ -286,16 +286,19 @@ def manual_callbacks(app):
     )
     def display_region_weight(selected_region, new_region_weight):
         if selected_region:
+            # Check if the selected region is "Unknown"
+            if selected_region == "Unknown":
+                return "No existing region weight. Enter a region weight (max=31):", {'display': 'block'}, None
+
             # Assuming 'Region Weight' is a column in your dataframe (adjust as necessary)
             region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight'].values
 
             if region_weight.size > 0:
                 # Format the weight to 2 decimal points
                 formatted_weight = f"{region_weight[0]:.2f}"
-                return f"Region Weight for {selected_region}: {formatted_weight}", {'display': 'none'}, region_weight[
-                    0]
+                return f"Region Weight for {selected_region}: {formatted_weight}", {'display': 'none'}, region_weight[0]
             else:
-                return "No existing region weight. Enter a region weight:", {'display': 'block'}, None
+                return "No existing region weight. Enter a region weight (max=31):", {'display': 'block'}, None
 
         return "", {'display': 'none'}, None  # Reset if no region is selected
 
