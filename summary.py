@@ -40,7 +40,7 @@ def summary_layout(df, shapefile_path='ne_10m_admin_0_countries/ne_10m_admin_0_c
             ], body=True), width=3),
             dbc.Col(dbc.Card([
                 html.H3(f"{most_vulnerable_cwe}", className="card-title"),
-                html.P("The Most Vulnerable CWE", className="card-text")
+                html.P("The Most Common CWE", className="card-text")
             ], body=True), width=3),
             dbc.Col(dbc.Card([
                 html.H3(f"{total_platforms}", className="card-title"),

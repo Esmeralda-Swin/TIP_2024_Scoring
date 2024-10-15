@@ -2,15 +2,21 @@ import plotly.graph_objects as go
 import pandas as pd
 
 # Function to create an interactive heatmap for CVE and Technique relationships
-def create_cve_technique_heatmap(df):
+def create_cve_technique_heatmap(df,selected_technique=None):
     # Extract relevant columns for the heatmap (CVE ID and Technique)
     df_heatmap = df[['cve', 'technique-id']].dropna()
 
     # Remove rows where 'cve' or 'technique-id' contains 'UNKNOWN'
     df_heatmap = df_heatmap[df_heatmap['cve'] != 'UNKNOWN']
 
+    # Apply technique filtering if 'selected_technique' is provided
+    if selected_technique:
+        df_heatmap = df_heatmap[df_heatmap['technique-id'].isin(selected_technique)]
+
     # Create a crosstab (matrix) to show the number of times each CVE is associated with each Technique
     cve_technique_matrix = pd.crosstab(df_heatmap['cve'], df_heatmap['technique-id'])
+
+
 
     # Create the interactive heatmap with Plotly
     heatmap_fig = go.Figure(

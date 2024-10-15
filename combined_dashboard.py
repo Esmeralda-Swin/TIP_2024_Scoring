@@ -137,8 +137,18 @@ def render_content(tab):
                                    placeholder="Select Platform")],
                      style={'display': 'none'}, id='platform-filter-container'),
 
+            html.Div([
+                dcc.Dropdown(
+                    id="technique-selection-dropdown",
+                    options=[{'label': technique, 'value': technique} for technique in df['technique-id'].unique()],
+                    multi=True,
+                    placeholder="Select technique"
+                )
+            ], style={'display': 'none'}, id='technique-filter-container'),
+
             # Visual content container
-            html.Div(id='visual-content')
+            html.Div(id='visual-content'),
+
         ], style={
             'padding': '10px'  # Add padding if necessary
         })
@@ -154,22 +164,25 @@ html.Footer("2024-HS2-COS70008-Technology Innovation Project",
      Output('cve-filter-container', 'style'),
      Output('apt-filter-container', 'style'),
      Output('cwe-filter-container', 'style'),
-     Output('platform-filter-container', 'style')],
+     Output('platform-filter-container', 'style'),
+     Output('technique-filter-container', 'style')],
     [Input('cve-button', 'n_clicks'),
      Input('apt-button', 'n_clicks'),
      Input('cwe-button', 'n_clicks')],
     [Input('cve-filter-dropdown', 'value'),
      Input('apt-filter-dropdown', 'value'),
      Input('cwe-filter-dropdown', 'value'),
-     Input('platform-selection-dropdown', 'value')]
+     Input('platform-selection-dropdown', 'value'),
+     Input('technique-selection-dropdown', 'value')]
 )
 def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, selected_apts, selected_cwes,
-                          selected_platforms):
+                          selected_platforms, selected_technique):
     # Default: hide all dropdowns
     cve_dropdown_style = {'display': 'none'}
     apt_dropdown_style = {'display': 'none'}
     cwe_dropdown_style = {'display': 'none'}
     platform_dropdown_style = {'display': 'none'}
+    technique_dropdown_style = {'display': 'none'}
     content = html.Div()  # Default empty content
 
     # Set default CVE clicks to 1 if none are clicked
@@ -182,6 +195,7 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
     if cve_clicks and cve_clicks > apt_clicks and cve_clicks > cwe_clicks:
         # Show CVE-Related Visualizations and CVE dropdown
         cve_dropdown_style = {'display': 'block'}
+        technique_dropdown_style = {'display': 'block'}
 
         # Filter the data based on the selected CVEs
         if selected_cves:
@@ -191,15 +205,24 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
             filtered_df = df
             filtered_scatter = df_scatter
 
+        if selected_technique:
+            filtered_df = filtered_df[filtered_df['technique-id'].isin(selected_technique)]
+
         # Generate CVE-Related Visualizations
         bar_chart = create_cve_cwe_bar_chart(filtered_df)
         scatter_plot = create_cve_cwe_scatter_plot(filtered_scatter)
-        heatmap_fig = create_cve_technique_heatmap(filtered_df)
+        heatmap_fig = create_cve_technique_heatmap(filtered_df,selected_technique)
 
         content = dbc.Container([
             html.H3('CVE-Related Visualizations',
                     style={'textAlign': 'center', 'color': colors['text'], 'margin': '20px'}),
 
+            dbc.Row([
+                dbc.Col(dcc.Graph(figure=heatmap_fig), width=12,
+                        style={'border': '1px solid #ddd', 'padding': '10px', 'border-radius': '5px',
+                               'box-shadow': '2px 2px 5px rgba(0,0,0,0.1)',
+                               'margin-bottom': '10px'})
+            ]),
             dbc.Row([
                 dbc.Col(dcc.Graph(figure=bar_chart), width=6,
                         style={'border': '1px solid #ddd', 'padding': '10px', 'border-radius': '5px',
@@ -211,12 +234,6 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
                                'margin-bottom': '10px'}),
             ]),
 
-            dbc.Row([
-                dbc.Col(dcc.Graph(figure=heatmap_fig), width=12,
-                        style={'border': '1px solid #ddd', 'padding': '10px', 'border-radius': '5px',
-                               'box-shadow': '2px 2px 5px rgba(0,0,0,0.1)',
-                               'margin-bottom': '10px'})
-            ])
         ], fluid=True, style={'margin-bottom': '20px'})
 
 
@@ -327,7 +344,7 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
         ], fluid=True, style={'margin-bottom': '20px'})
 
     # Always return the content and dropdown styles (even if no buttons are clicked)
-    return content, cve_dropdown_style, apt_dropdown_style, cwe_dropdown_style, platform_dropdown_style
+    return content, cve_dropdown_style, apt_dropdown_style, cwe_dropdown_style, platform_dropdown_style, technique_dropdown_style
 
 
 # Register callbacks from autonomous and manual files
