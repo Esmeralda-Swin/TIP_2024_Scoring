@@ -297,16 +297,19 @@ def manual_callbacks(app):
     )
     def display_region_weight(selected_region, new_region_weight):
         if selected_region:
+            # Check if the selected region is "Unknown"
+            if selected_region == "Unknown":
+                return "No existing region weight. Enter a region weight (max=31):", {'display': 'block'}, None
+
             # Assuming 'Region Weight' is a column in your dataframe (adjust as necessary)
             region_weight = df_final.loc[df_final['region'] == selected_region, 'region-weight'].values
 
             if region_weight.size > 0:
                 # Format the weight to 2 decimal points
                 formatted_weight = f"{region_weight[0]:.2f}"
-                return f"Region Weight for {selected_region}: {formatted_weight}", {'display': 'none'}, region_weight[
-                    0]
+                return f"Region Weight for {selected_region}: {formatted_weight}", {'display': 'none'}, region_weight[0]
             else:
-                return "No existing region weight. Enter a region weight:", {'display': 'block'}, None
+                return "No existing region weight. Enter a region weight (max=31):", {'display': 'block'}, None
 
         return "", {'display': 'none'}, None  # Reset if no region is selected
 
@@ -319,7 +322,7 @@ def manual_callbacks(app):
         if selected_tactic:
             # Check if the selected tactic is "Unknown"
             if selected_tactic == "Unknown":
-                return 0  # Return 0 for "Unknown" tactic
+                return 14   # Return 0 for "Unknown" tactic
 
             # Otherwise, lookup the tactic weight
             tactic_weight = df_final.loc[df_final['tactic-id'] == selected_tactic, 'tactic-weight']
@@ -405,7 +408,7 @@ def manual_callbacks(app):
             # Use `weight_region` if available, otherwise use `new_region_weight`
             region_weight = weight_region if weight_region is not None else (
                 int(new_region_weight) if new_region_weight else 0)
-            output_data.append(("Region Weight", region_weight))
+            output_data.append(("Region Weight", f"{region_weight:.2f}"))
 
             output_data.append(("CVSS Score", cvss))
             output_data.append(("Platform Count", new_platform))
@@ -429,8 +432,12 @@ def manual_callbacks(app):
                           integrate_time(int(time)))
 
             # Calculate the Final Threat Actor Score
-            score = (complexity * prevalence) / 100
+            actor_score = (complexity * prevalence)
+            max_score = 27285.75 #The max is set as per the maximum possible according to the algorithm
+            score=(actor_score/max_score)*100 # calculating the threat actor as percentage
+            # score = (actor_score / max_score) * 100 if actor_score <= max_score else 100
 
+            # score = min(score, 100)
             # Define a function to categorize the Threat Actor Score Percentage
             def categorize_score(score):
                 if 0 <= score <= 19.99:
@@ -449,8 +456,8 @@ def manual_callbacks(app):
 
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
-            output_data.append(("Prevalence", prevalence))
-            output_data.append(("Threat Actor Score(%)", score))
+            output_data.append(("Prevalence", f"{prevalence:.2f}"))
+            output_data.append(("Threat Actor Score (%)", f"{score:.3f}"))
             output_data.append(("Threat Actor Category", category))
 
             # Create table output
