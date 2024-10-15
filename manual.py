@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 app = Dash(__name__)
 
 # Load country names from GeoDataFrame
-geojson_path = r'ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'  # Update this path
+geojson_path = r'C:\Users\disha\Tech innovation Project\TechProject\TIP_2024_Scoring\ne_10m_admin_0_countries'  # Update this path
 world = gpd.read_file(geojson_path)
 
 # Extract the list of country names and sort in ascending order
@@ -393,7 +393,7 @@ def manual_callbacks(app):
             # Use `weight_region` if available, otherwise use `new_region_weight`
             region_weight = weight_region if weight_region is not None else (
                 int(new_region_weight) if new_region_weight else 0)
-            output_data.append(("Region Weight", region_weight))
+            output_data.append(("Region Weight", f"{region_weight:.2f}"))
 
             output_data.append(("CVSS Score", cvss))
             output_data.append(("Platform Count", new_platform))
@@ -417,8 +417,12 @@ def manual_callbacks(app):
                           integrate_time(int(time)))
 
             # Calculate the Final Threat Actor Score
-            score = (complexity * prevalence) / 100
+            actor_score = (complexity * prevalence)
+            max_score = 27285.75 #The max is set as per the maximum possible according to the algorithm
+            score=(actor_score/max_score)*100 # calculating the threat actor as percentage
+            # score = (actor_score / max_score) * 100 if actor_score <= max_score else 100
 
+            # score = min(score, 100)
             # Define a function to categorize the Threat Actor Score Percentage
             def categorize_score(score):
                 if 0 <= score <= 19.99:
@@ -437,8 +441,8 @@ def manual_callbacks(app):
 
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
-            output_data.append(("Prevalence", prevalence))
-            output_data.append(("Threat Actor Score(%)", score))
+            output_data.append(("Prevalence", f"{prevalence:.2f}"))
+            output_data.append(("Threat Actor Score (%)", f"{score:.3f}"))
             output_data.append(("Threat Actor Category", category))
 
             # Create table output
