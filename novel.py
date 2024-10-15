@@ -66,7 +66,7 @@ for year in range(2019, 2051):
             adjusted_prevalence = row['Prevalence']  # Prevalence already incorporates time factor
             probability = (row['Complexity'] * adjusted_prevalence)
         else:  # For 2024 onwards, apply a growth factor to Prevalence
-            growth_factor = 1 + 0.05 * (year - 2024)  # Assume 5% growth
+            growth_factor = 1 + 0.05 * (year - 2024)  # Assume growth of 0.05
             current_complexity = row['Complexity'] * growth_factor
             current_prevalence = row['Prevalence'] * growth_factor
             probability = ((current_complexity * current_prevalence * df_final['vulnerability-score'].mean()) /
