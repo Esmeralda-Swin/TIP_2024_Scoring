@@ -54,7 +54,7 @@ df_avg_scores = df_final.groupby('apt', as_index=False).agg({
 
 # Simulate increasing defense scores for the years 2019 to 2050
 initial_defense_score = 1  # Starting defense score
-growth_rate = 0.05  # Amount to increase each year
+growth_rate = 0.5  # Amount to increase each year
 defense_scores = {year: initial_defense_score + growth_rate * (year - 2024) for year in range(2024, 2051)}
 
 # Create a DataFrame for years 2019 to 2050
@@ -136,7 +136,7 @@ def novel_callbacks(app):
             },
             title='Variation of Threat Actor Score vs. Probability of Attack (%) (2019-2050)',
             labels={'Probability_Percentage': 'Probability of Attack (%)'},  # Updated label
-            # trendline='ols'  # Optional: Add a trendline for better visualization
+            trendline='ols'  # Optional: Add a trendline for better visualization
         )
 
         return fig
