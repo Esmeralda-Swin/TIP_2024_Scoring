@@ -54,8 +54,8 @@ df_avg_scores = df_final.groupby('apt', as_index=False).agg({
 
 # Simulate increasing defense scores for the years 2019 to 2050
 initial_defense_score = 1  # Starting defense score
-growth_rate = 0.5  # Amount to increase each year
-defense_scores = {year: initial_defense_score + growth_rate * (year - 2024) for year in range(2024, 2051)}
+defense_factor = 0.5  # Amount to increase each year
+defense_scores = {year: initial_defense_score + defense_factor* (year - 2024) for year in range(2024, 2051)}
 
 # Create a DataFrame for years 2019 to 2050
 results = []
@@ -66,9 +66,9 @@ for year in range(2019, 2051):
             adjusted_prevalence = row['Prevalence']  # Prevalence already incorporates time factor
             probability = (row['Complexity'] * adjusted_prevalence)
         else:  # For 2024 onwards, apply a growth factor to Prevalence
-            growth_factor = 1 + 0.05 * (year - 2024)  # Assume growth of 0.05
-            current_complexity = row['Complexity'] * growth_factor
-            current_prevalence = row['Prevalence'] * growth_factor
+            attack_factor = 1 + 0.05 * (year - 2024)  # Assume growth of 0.05
+            current_complexity = row['Complexity'] * attack_factor
+            current_prevalence = row['Prevalence'] * attack_factor
             probability = ((current_complexity * current_prevalence * df_final['vulnerability-score'].mean()) /
                            defense_scores[year])  # Use the changing defense score
 
