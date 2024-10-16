@@ -429,7 +429,13 @@ def manual_callbacks(app):
                           int(impact_score) +
                           int(ioc_weight) +
                           integrate_time(int(time)))
-
+            if prevalence <= 0:
+                prevalence = (region_weight +
+                              int(cvss) +
+                              int(new_platform) +
+                              int(impact_score) +
+                              int(ioc_weight) +
+                              integrate_time(int(time) +1))
             # Calculate the Final Threat Actor Score
             actor_score = (complexity * prevalence)
             max_score = 27285.75 #The max is set as per the maximum possible according to the algorithm
@@ -456,6 +462,7 @@ def manual_callbacks(app):
             # Append complexity, prevalence, and score to output data
             output_data.append(("Complexity", complexity))
             output_data.append(("Prevalence", f"{prevalence:.2f}"))
+            # output_data.append(("Threat Actor Score", score))
             output_data.append(("Threat Actor Score (%)", f"{score:.3f}"))
             output_data.append(("Threat Actor Category", category))
 
