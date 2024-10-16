@@ -253,7 +253,7 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
             filtered_df = df
 
         if selected_platforms:
-            filtered_df = filtered_df[filtered_df['platforms'].isin(selected_platforms)]
+            filtered_df_platforms = filtered_df[filtered_df['platforms'].isin(selected_platforms)]
 
         # Generate APT-related visualizations
         stacked_bar_chart = create_apt_platform_stacked_bar_chart(filtered_df, selected_apts, selected_platforms)
