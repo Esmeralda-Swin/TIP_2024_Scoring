@@ -68,12 +68,13 @@ app.layout = html.Div(
 
         # Create tabs for switching between sections
         dcc.Tabs(id="tabs", value='summary-tab', children=[
-            dcc.Tab(label='Summary', value='summary-tab'),
-            dcc.Tab(label='Autonomous', value='auto-tab'),
-            dcc.Tab(label='Manual', value='manual-tab'),
-            dcc.Tab(label='Novelty', value='novelty-tab'),
-            dcc.Tab(label='Visualisation', value='visualisation-tab')
-        ]),
+            dcc.Tab(label='Summary', value='summary-tab', className='tab-style', selected_className='tab-selected'),
+            dcc.Tab(label='Autonomous', value='auto-tab', className='tab-style', selected_className='tab-selected'),
+            dcc.Tab(label='Manual', value='manual-tab', className='tab-style', selected_className='tab-selected'),
+            dcc.Tab(label='Novelty', value='novelty-tab', className='tab-style', selected_className='tab-selected'),
+            dcc.Tab(label='Visualisation', value='visualisation-tab', className='tab-style',
+                    selected_className='tab-selected')
+        ], className='tabs-container'),
 
         # Tab content container
         html.Div(id='tabs-content'),
@@ -99,9 +100,12 @@ def render_content(tab):
             html.H2("Visualization Dashboard", style={'textAlign': 'center', 'color': colors['text']}),
 
             html.Div([
-                html.Button('CVE-Related Visualizations', id='cve-button', n_clicks=0, className='btn-hover',style={'margin-right': '10px'}),
-                html.Button('APT-Related Visualizations', id='apt-button', n_clicks=0, className='btn-hover',style={'margin-right': '10px'}),
-                html.Button('CWE-Related Visualizations', id='cwe-button', n_clicks=0, className='btn-hover',style={'margin-right': '10px'})
+                html.Button('CVE-Related Visualizations', id='cve-button', n_clicks=0, className='btn-hover',
+                            style={'margin-right': '10px'}),
+                html.Button('APT-Related Visualizations', id='apt-button', n_clicks=0, className='btn-hover',
+                            style={'margin-right': '10px'}),
+                html.Button('CWE-Related Visualizations', id='cwe-button', n_clicks=0, className='btn-hover',
+                            style={'margin-right': '10px'})
             ], style={'display': 'flex', 'justifyContent': 'center', 'alignItems': 'center', 'margin': '20px'}),
 
             # Dropdowns for filtering (hidden by default, shown based on selection)
@@ -211,7 +215,7 @@ def update_visual_content(cve_clicks, apt_clicks, cwe_clicks, selected_cves, sel
         # Generate CVE-Related Visualizations
         bar_chart = create_cve_cwe_bar_chart(filtered_df)
         scatter_plot = create_cve_cwe_scatter_plot(filtered_scatter)
-        heatmap_fig = create_cve_technique_heatmap(filtered_df,selected_technique)
+        heatmap_fig = create_cve_technique_heatmap(filtered_df, selected_technique)
 
         content = dbc.Container([
             html.H3('CVE-Related Visualizations',

@@ -57,15 +57,19 @@ def summary_layout(df, shapefile_path='ne_10m_admin_0_countries/ne_10m_admin_0_c
             ], body=True), width=3),
         ], className="mb-4"),
 
-        # Folium Map (replace Top 5 CVEs by Severity)
+        # Folium Map and Pie Chart for top 10 APT
         dbc.Row([
-            dbc.Col(html.Iframe(srcDoc=map_html, width='100%', height='600'), width=8),
-            dbc.Col(dcc.Graph(figure=top_10_apt_pie_chart, style={'height': '600px'}), width=4, )
-        ], className="mb-4"),
+            dbc.Col(html.Iframe(srcDoc=map_html, width='100%', height='600'), width=8,
+                    style={'border': '1px solid #ddd', 'padding': '10px', 'border-radius': '5px',
+                           'box-shadow': '2px 2px 5px rgba(0,0,0,0.1)', 'margin-bottom': '10px'}),
+
+            dbc.Col(dcc.Graph(figure=top_10_apt_pie_chart, style={'height': '600px'}), width=4,
+                    style={'border': '1px solid #ddd', 'padding': '10px', 'border-radius': '5px',
+                           'box-shadow': '2px 2px 5px rgba(0,0,0,0.1)', 'margin-bottom': '10px'})
+        ], className="mb-4")
 
         # Add more sections or charts as needed
     ], fluid=True, style={
         'height': '100vh',  # Set the height to the full viewport height
-        'overflow': 'hidden',  # Disable scrolling
         'padding': '10px'  # Add padding if necessary
     })

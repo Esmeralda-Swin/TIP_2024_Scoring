@@ -2,3 +2,28 @@
     background-color: #0056b3;
     color: white;
 }
+
+/* styles for individual tabs */
+.tab-style {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    color: black;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+/* styles for selected tab */
+.tab-selected {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #007bff;
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+}

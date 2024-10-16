@@ -22,7 +22,7 @@ def create_region_map(df, shapefile_path='ne_10m_admin_0_countries/ne_10m_admin_
     world_with_data = world.merge(region_frequency, left_on='NAME_EN', right_on='region', how='left')
 
     # Initialize a folium map centered on the world
-    m = folium.Map(location=[20, 0], zoom_start=2)
+    m = folium.Map(location=[61.5240, 105.3188], zoom_start=1.5)
 
     # Create a color scale for the region counts
     colormap = linear.YlOrRd_09.scale(world_with_data['region_count'].min(), world_with_data['region_count'].max())
