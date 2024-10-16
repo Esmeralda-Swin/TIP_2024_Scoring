@@ -11,8 +11,13 @@ colors = {
 
 
 def summary_layout(df, shapefile_path='ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp'):
+    # Split 'platforms' into separate rows
+    df['platforms'] = df['platforms'].fillna('')  # Replace NaNs with empty strings
+    df_expanded = df.assign(platform=df['platforms'].str.split(',')).explode('platform')
+    df_expanded['platform'] = df_expanded['platform'].str.strip()
+
     # Calculate key metrics
-    total_platforms = df['platforms'].nunique()
+    total_platforms = df_expanded['platform'].nunique()
     total_apts = df['apt'].nunique()
 
     # Get the Top 10 APT pie chart by calling the function

@@ -37,7 +37,6 @@ colors = {
     'text': '#333333'
 }
 
-
 # # Calculate Complexity
 # df_final['Complexity'] = df_final['Number_of_Techniques_Used'] + df_final['platform-count'] + df_final['tactic-weight']
 #
